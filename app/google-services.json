@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "401313779910",
+    "project_id": "denunciaapp-afe05",
+    "storage_bucket": "denunciaapp-afe05.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:401313779910:android:5bc863bf420aa68ff307c7",
+        "android_client_info": {
+          "package_name": "mx.edu.utng.oic.denunciaapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "401313779910-bqogv1tpdgsmt4q0hnfhl6hj4pajqmsf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB07BLvCummLn71dxmLpR_YiVOx1HcpIxY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "401313779910-bqogv1tpdgsmt4q0hnfhl6hj4pajqmsf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

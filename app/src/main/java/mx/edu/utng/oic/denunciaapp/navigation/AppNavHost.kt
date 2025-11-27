@@ -1,0 +1,263 @@
+package mx.edu.utng.oic.denunciaapp.navigation
+
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+
+// Importar todas las pantallas necesarias (se asume que estas Composable existen)
+import mx.edu.utng.oic.denunciaapp.ui.screens.LoginScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.RegisterScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.UserProfileScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.HomePageScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.DenunciasScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.AgenciasScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.CreateForumScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.DenunciaFotograficaScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.MisDenunciasScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.PersonaDesaparecidaScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.RoboVehiculoScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.RoboCasaScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.RoboObjetoScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.ExtorsionScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.DenunciaViolenciaScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.ForosPageScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.MessagesScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.PostsScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.ForgotPasswordScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.Foro
+import mx.edu.utng.oic.denunciaapp.ui.screens.MenuScreen
+
+
+/**
+ * Define el NavHost que gestiona las transiciones entre las diferentes pantallas
+ * de la aplicación, utilizando las rutas definidas en AppScreen.
+ */
+@Composable
+fun AppNavHost(
+    navController: NavHostController,
+    modifier: Modifier = Modifier,
+    startDestination: String = AppScreen.Login.route
+) {
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier
+    ) {
+        // --- 1. Rutas de Autenticación/Perfil ---
+
+        composable(AppScreen.Login.route) {
+            // CORREGIDO: Se ajustan los parámetros para coincidir con la nueva firma de LoginScreen:
+            // onLoginClick: (String, String) -> Unit, onRegisterClick: () -> Unit, onForgotPasswordClick: () -> Unit
+            LoginScreen(
+                onLoginClick = { email, password -> // Acepta email y password, pero solo navega
+                    // NOTA: Aquí iría la llamada a tu ViewModel/servicio de autenticación.
+                    // Asumimos éxito para la navegación:
+                    navController.navigate(AppScreen.Denuncias.route) {
+                        popUpTo(AppScreen.Login.route) { inclusive = true }
+                    }
+                },
+                // Se renombra el callback de registro para coincidir con la firma
+                onRegisterClick = { navController.navigate(AppScreen.Register.route) },
+                // Se añade el callback faltante para la nueva ruta (asumiendo que AppScreen tiene 'ForgotPassword')
+                onForgotPasswordClick = { navController.navigate(AppScreen.ForgotPassword.route) }
+            )
+        }
+        composable(AppScreen.Register.route) {
+            RegisterScreen(
+                onRegisterSuccess = {
+                    // Navega a Denuncias y limpia la pila
+                    navController.navigate(AppScreen.Denuncias.route) {
+                        popUpTo(AppScreen.Register.route) { inclusive = true }
+                    }
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // [NUEVA RUTA DE AUTENTICACIÓN AÑADIDA]
+        // Se asume que AppScreen tiene: data object ForgotPassword : AppScreen("forgot_password_screen")
+        composable(AppScreen.ForgotPassword.route) {
+            ForgotPasswordScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable(AppScreen.UserProfile.route) {
+            UserProfileScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+
+        // --- 2. Rutas de Nivel Superior (Bottom Bar / Menú Principal) ---
+
+        composable(AppScreen.HomePage.route) {
+            HomePageScreen(
+                onOpenDrawer = { navController.navigate(AppScreen.Menu.route) },
+                onNavigateTo = { route -> navController.navigate(route) }
+            )
+        }
+
+        // Dentro de AppNavHost.kt, en el bloque NavHost
+
+// Pantalla principal Denuncias Hub (Contiene el Grid de opciones)
+        composable(AppScreen.Denuncias.route) {
+            DenunciasScreen(
+                // Navegación desde el TopBar/Íconos
+                onNavigateToMisDenuncias = { navController.navigate(AppScreen.MisDenuncias.route) },
+                // >>> NUEVO CALLBACK para abrir el Menú <<<
+                onOpenMenu = { navController.navigate(AppScreen.Menu.route) },
+
+                // Callbacks que se mantienen
+                onNavigateToAgencias = { navController.navigate(AppScreen.Agencias.route) },
+                onNavigateToPosts = { navController.navigate(AppScreen.Posts.route) },
+
+                // Navegación a Formularios específicos
+                onNavigateToDenunciaFotografica = { navController.navigate(AppScreen.DenunciaFotografica.route) },
+                onNavigateToPersonaDesaparecida = { navController.navigate(AppScreen.PersonaDesaparecida.route) },
+                onNavigateToRoboVehiculo = { navController.navigate(AppScreen.RoboVehiculo.route) },
+                onNavigateToRoboCasa = { navController.navigate(AppScreen.RoboCasa.route) },
+                onNavigateToRoboObjeto = { navController.navigate(AppScreen.RoboObjeto.route) },
+                onNavigateToExtorsion = { navController.navigate(AppScreen.Extorsion.route) },
+                onNavigateToDenunciaViolencia = { navController.navigate(AppScreen.DenunciaViolencia.route) },
+            )
+        }
+
+        composable(AppScreen.ForosPage.route) {
+            ForosPageScreen(
+                // Nuevo callback para el FAB
+                onNavigateToCreateForum = { navController.navigate(AppScreen.CreateForum.route) },
+                onNavigateTo = { route -> navController.navigate(route) }
+            )
+        }
+
+        composable(AppScreen.CreateForum.route) {
+            // Callback para manejar la creación del foro (simulado)
+            val onCreateForum: (mx.edu.utng.oic.denunciaapp.data.model.Foro) -> Unit = { nuevoForo ->
+                // Aquí iría la lógica real para guardar el foro en un ViewModel/Repository
+                println(">>> Nuevo Foro Creado: ${nuevoForo.tema} por ${nuevoForo.username}")
+                // Tras el guardado (que se simula dentro de CreateForumScreen), volvemos
+                navController.popBackStack()
+            }
+
+            CreateForumScreen(
+                onNavigateBack = { navController.popBackStack() }, // Volver a la pantalla anterior
+                onCreateForum = onCreateForum
+            )
+        }
+
+        composable(AppScreen.Messages.route) {
+            MessagesScreen(onBack = { navController.popBackStack() },
+                onOpenDrawer = { navController.navigate(AppScreen.Menu.route) }
+            )
+        }
+
+        composable(AppScreen.Menu.route) {
+            MenuScreen(
+                onNavigateToProfile = { navController.navigate(AppScreen.UserProfile.route) }, // <<-- ¡El navController SÍ está disponible aquí!
+                onNavigateToEmergency = { navController.navigate(AppScreen.EmergencyContacts.route) },
+                onNavigateToTerms = { navController.navigate(AppScreen.TermsAndConditions.route) },
+                onLogOut = { navController.navigate(AppScreen.Login.route) { popUpTo(0) } },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(AppScreen.Posts.route) {
+            PostsScreen(onBack = { navController.popBackStack() },
+                onNavigateToChat = { postId -> navController.navigate("${AppScreen.Messages.route}/$postId") }, // Navega a la pantalla de mensajes con el ID del post
+                onNavigateToMenu = { navController.navigate(AppScreen.Menu.route) } // Navega al menú lateral
+            )
+        }
+
+
+        // --- 3. Sub-rutas de Detalle y Formularios ---
+
+        composable(AppScreen.MisDenuncias.route) {
+            MisDenunciasScreen(
+                // Callback para regresar a la pantalla anterior (Denuncias.kt)
+                onNavigateBack = { navController.popBackStack() },
+
+                onOpenDrawer = { navController.navigate(AppScreen.Menu.route) }, // Se mantiene por si MisDenuncias tuviera un Top Bar diferente
+
+                onNavigateToDenunciaDetail = { denunciaId -> navController.navigate("${AppScreen.DenunciaDetail.route}/$denunciaId") } // Navega a la vista de detalle
+            )
+        }
+
+        // Agencias cercanas (generalmente con mapa)
+        composable(AppScreen.Agencias.route) {
+            AgenciasScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        // FORMULARIOS DE DENUNCIA
+
+        composable(AppScreen.DenunciaFotografica.route) {
+            DenunciaFotograficaScreen(
+                onCancel = { navController.popBackStack() },
+                onSave = { desc, loc, uri ->
+                    // Lógica de guardado y luego regresa
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(AppScreen.PersonaDesaparecida.route) {
+            PersonaDesaparecidaScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
+                onSave = { nombre, sexo, edad, descFisica, vestimenta, detalles, uri ->
+                    // Aquí iría la lógica para guardar la denuncia en el backend o Firestore
+                    // Por ahora, simplemente volvemos a la pantalla anterior.
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(AppScreen.RoboVehiculo.route) {
+            RoboVehiculoScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
+                onSave = { placas, serie, marca, color, anio, nombre, uri ->
+                    // Aquí iría la lógica para guardar el reporte de vehículo robado
+                    // Por ejemplo: viewModel.saveRoboVehiculo(data)
+                    navController.popBackStack() // Volver después de guardar
+                }
+            )
+        }
+
+        composable(AppScreen.RoboCasa.route) {
+            RoboCasaScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
+                onSave = { descripcion, ubicacion, telefono, confirmarTelefono, uri ->
+                    navController.popBackStack() // Volver después de guardar
+                }
+            )
+        }
+
+        composable(AppScreen.RoboObjeto.route) {
+            RoboObjetoScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
+                onSave = { tipo, marca, estado, color, anio, ubicacion, uri ->
+                    // Aquí iría la lógica para guardar el reporte del objeto robado
+                    // Por ejemplo: viewModel.saveRoboObjeto(data)
+                    navController.popBackStack() // Volver después de guardar
+                }
+            )
+        }
+
+        composable(AppScreen.Extorsion.route) {
+            ExtorsionScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
+                onSave = { numeroTelefonico, descripcionHechos, audioUri ->
+                    // Aquí iría la lógica para guardar el reporte de extorsión
+                    // Por ejemplo: viewModel.saveExtorsion(data)
+                    navController.popBackStack() // Volver después de guardar
+                }
+            )
+        }
+
+
+
+        composable(AppScreen.DenunciaViolencia.route) {
+            DenunciaViolenciaScreen(onCancel = { navController.popBackStack() },
+                onSave = { descripcionHecho, ubicacion, descripcionConducta, telefono, confirmarTelefono, imageUri ->
+                    // Aquí iría la lógica para guardar el reporte de violencia de género
+                    // Por ejemplo: viewModel.saveViolencia(data)
+                    navController.popBackStack() // Volver después de guardar
+                }
+            )
+        }
+    }
+}
