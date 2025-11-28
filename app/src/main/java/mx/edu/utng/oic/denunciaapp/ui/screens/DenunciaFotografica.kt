@@ -25,19 +25,20 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.ImeAction
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
 import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
-
-// Importar las funciones y el Diálogo del archivo de utilidad
 import mx.edu.utng.oic.denunciaapp.ui.utils.MapSelectionDialog
 import mx.edu.utng.oic.denunciaapp.ui.utils.checkLocationPermission
 import mx.edu.utng.oic.denunciaapp.ui.utils.getCurrentLocation
 import mx.edu.utng.oic.denunciaapp.ui.utils.getAddressFromLatLng
 import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
 import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaFotograficaViewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory
 
 
 // --- Constantes de la pantalla ---
@@ -49,26 +50,56 @@ const val DefaultZoom = 15f
 @Composable
 fun DenunciaFotograficaScreen(
     onCancel: () -> Unit,
-    onSave: (description: String, location: String, imageUri: String?) -> Unit // imageUri sería la URI de la imagen
+    onSuccess: () -> Unit // Nueva acción para cuando la denuncia se guarda exitosamente
 ) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // 1. Inicialización del ViewModel
+    val viewModel: DenunciaFotograficaViewModel = viewModel(
+        factory = DenunciaAppViewModelFactory.createDenunciaFotograficaViewModelFactory()
+    )
 
     // --- Estados del formulario ---
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) } // URI de la imagen (simulada)
 
     // --- Estado del Mapa y Ubicación ---
     var showMapDialog by remember { mutableStateOf(false) }
     var currentCameraPosition by remember { mutableStateOf(CameraPosition.fromLatLngZoom(DefaultLocation, DefaultZoom)) }
-    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
+    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) } // Coordenadas del marcador
     var isLoadingLocation by remember { mutableStateOf(false) }
 
     // --- Estados de Permisos ---
     var hasLocationPermission by remember {
         mutableStateOf(checkLocationPermission(context))
     }
+
+    // --- Feedback del ViewModel ---
+    // CORRECCIÓN: Usar collectAsState para observar los StateFlow del ViewModel
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val saveError by viewModel.saveError.collectAsState()
+    val isSaving by viewModel.isSaving.collectAsState()
+
+    // Efecto para manejar el éxito y el error
+    LaunchedEffect(saveSuccess, saveError) {
+        if (saveSuccess) {
+            onSuccess() // Navega o muestra éxito
+            viewModel.resetStates() // Limpiar después de la navegación
+        }
+
+        saveError?.let { errorMsg ->
+            snackbarHostState.showSnackbar(
+                message = errorMsg,
+                actionLabel = "OK"
+            )
+            // Limpiar el error después de mostrar
+            viewModel.resetStates()
+        }
+    }
+
 
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -127,6 +158,7 @@ fun DenunciaFotograficaScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) }, // <--- Se añade el SnackbarHost
         containerColor = Color.White
     ) { paddingValues ->
         Column(
@@ -139,7 +171,7 @@ fun DenunciaFotograficaScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Área de Previsualización de Imagen (sin cambios) ---
+            // --- Área de Previsualización de Imagen ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -165,13 +197,13 @@ fun DenunciaFotograficaScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Botones para Seleccionar Imagen (sin cambios) ---
+            // --- Botones para Seleccionar Imagen (Simulación) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
-                    onClick = { /* Lógica para abrir la cámara */ },
+                    onClick = { selectedImageUri = "simulated_camera_uri_${System.currentTimeMillis()}" }, // Simulación
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f)
@@ -182,7 +214,7 @@ fun DenunciaFotograficaScreen(
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
-                    onClick = { /* Lógica para abrir la galería */ },
+                    onClick = { selectedImageUri = "simulated_gallery_uri_${System.currentTimeMillis()}" }, // Simulación
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f)
@@ -195,7 +227,7 @@ fun DenunciaFotograficaScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Campo "Describe el hecho" (sin cambios) ---
+            // --- Campo "Describe el hecho" ---
             LabelText("Describe el hecho")
             OutlinedTextField(
                 value = description,
@@ -222,11 +254,11 @@ fun DenunciaFotograficaScreen(
             ) {
                 OutlinedTextField(
                     value = location,
-                    onValueChange = { location = it }, // Permitir la edición si se desea
+                    onValueChange = { location = it },
                     placeholder = { Text("Ubicación actual o seleccionada", color = WireframeGray) },
                     modifier = Modifier
                         .weight(1f),
-                    readOnly = false, // Ahora se puede editar
+                    readOnly = false,
                     trailingIcon = {
                         // Botón para obtener la ubicación actual (GPS)
                         IconButton(onClick = {
@@ -293,14 +325,29 @@ fun DenunciaFotograficaScreen(
 
             // --- Botón "Guardar" ---
             Button(
-                onClick = { onSave(description, location, selectedImageUri) },
+                onClick = {
+                    // 2. Llamada al ViewModel con los datos del formulario
+                    viewModel.submitDenuncia(
+                        description = description,
+                        locationAddress = location,
+                        latitud = selectedMarkerLocation?.latitude,
+                        longitud = selectedMarkerLocation?.longitude,
+                        imageUri = selectedImageUri
+                    )
+                },
+                // Deshabilitar si está guardando
+                enabled = !isSaving && description.isNotBlank() && location.isNotBlank(), // Validación básica
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                if (isSaving) {
+                    CircularProgressIndicator(color = Color.DarkGray, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -327,13 +374,11 @@ fun DenunciaFotograficaScreen(
     }
 }
 
-// Las funciones auxiliares y MapSelectionDialog han sido movidas a LocationAndMapUtils.kt
-
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun DenunciaFotograficaPreview() {
     DenunciaFotograficaScreen(
         onCancel = {},
-        onSave = { _, _, _ -> }
+        onSuccess = {}
     )
 }

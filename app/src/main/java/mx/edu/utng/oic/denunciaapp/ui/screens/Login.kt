@@ -17,13 +17,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.edu.utng.oic.denunciaapp.data.model.User
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.LoginViewModel
 
 // Color azul similar al del wireframe (puedes moverlo a tu archivo de tema)
 val WireframeBlue = Color(0xFF64B5F6)
 
 @Composable
 fun LoginScreen(
-    onLoginClick: (String, String) -> Unit,
+    // El ViewModel se inyecta o se obtiene aquí
+    viewModel: LoginViewModel = viewModel(),
+    // onLoginSuccess ahora recibe el usuario
+    onLoginSuccess: (User) -> Unit,
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit
 ) {
@@ -31,122 +37,173 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // Scaffold provee la estructura básica, aunque aquí usaremos una Columna simple con scroll
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color.White // Fondo blanco como el dibujo
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp)
-                .verticalScroll(rememberScrollState()), // Permite scroll en pantallas pequeñas
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+    // Estado del ViewModel
+    val isLoading = viewModel.isLoading
+    val errorMessage = viewModel.errorMessage
+    val authenticatedUser = viewModel.authenticatedUser
 
-            // --- Encabezado ---
-            Text(
-                text = "Iniciar sesión",
-                fontSize = 20.sp,
-                color = Color.Gray,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp),
-                textAlign = TextAlign.Start
-            )
+    // Para mostrar mensajes de error (Snackbars)
+    val snackbarHostState = remember { SnackbarHostState() }
 
-            HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Formulario ---
-
-            // Campo Correo
-            LabelText("Correo electrónico:")
-            OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Introduce tu correo") }, // Placeholder como en el dibujo
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Email,
-                    imeAction = ImeAction.Next
-                )
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Campo Contraseña
-            LabelText("Contraseña:")
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("********") },
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(), // Oculta el texto
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
-                )
-            )
-
-            Spacer(modifier = Modifier.height(40.dp))
-
-            // --- Botón Ingresa ---
-            Button(
-                onClick = { onLoginClick(email, password) },
-                colors = ButtonDefaults.buttonColors(containerColor = WireframeBlue),
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.width(160.dp) // Ancho fijo aproximado al dibujo
-            ) {
-                Text(
-                    text = "Ingresa",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // --- Olvidaste tu contraseña ---
-            TextButton(onClick = onForgotPasswordClick) {
-                Text(
-                    text = "¿Olvidaste tu contraseña?",
-                    color = Color(0xFF7986CB) // Un tono azul/lila suave
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // --- Sección Registro ---
-            Text(
-                text = "¿No tienes cuenta?",
-                color = Color.Gray,
-                fontSize = 16.sp
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = onRegisterClick,
-                colors = ButtonDefaults.buttonColors(containerColor = WireframeBlue),
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.width(160.dp)
-            ) {
-                Text(
-                    text = "Registrate", // Tal cual aparece en el dibujo (sin tilde según imagen)
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+    // Efecto para manejar el éxito del login
+    LaunchedEffect(authenticatedUser) {
+        authenticatedUser?.let { user ->
+            onLoginSuccess(user)
         }
     }
+
+    // Efecto para manejar errores
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "Cerrar",
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearError() // Limpiar el error después de mostrarlo
+        }
+    }
+
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        content = { paddingValues ->
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                color = Color.White // Fondo blanco como el dibujo
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp)
+                        .verticalScroll(rememberScrollState()), // Permite scroll en pantallas pequeñas
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+
+                    // --- Encabezado ---
+                    Text(
+                        text = "Iniciar sesión",
+                        fontSize = 20.sp,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        textAlign = TextAlign.Start
+                    )
+
+                    HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- Formulario ---
+
+                    // Campo Correo
+                    LabelText("Correo electrónico:")
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Introduce tu correo") }, // Placeholder como en el dibujo
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        // Deshabilitar entrada mientras carga
+                        enabled = !isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Campo Contraseña
+                    LabelText("Contraseña:")
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("********") },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(), // Oculta el texto
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        // Deshabilitar entrada mientras carga
+                        enabled = !isLoading
+                    )
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    // --- Botón Ingresa ---
+                    Button(
+                        onClick = {
+                            // Lógica de validación antes de llamar al ViewModel
+                            if (email.isBlank() || password.isBlank()) {
+                                viewModel.errorMessage = "El correo electrónico y la contraseña son obligatorios."
+                            } else {
+                                viewModel.login(email, password)
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = WireframeBlue),
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.width(160.dp), // Ancho fijo aproximado al dibujo
+                        enabled = !isLoading // Deshabilitar si está cargando
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(
+                                text = "Ingresa",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // --- Olvidaste tu contraseña ---
+                    TextButton(onClick = onForgotPasswordClick, enabled = !isLoading) {
+                        Text(
+                            text = "¿Olvidaste tu contraseña?",
+                            color = Color(0xFF7986CB) // Un tono azul/lila suave
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // --- Sección Registro ---
+                    Text(
+                        text = "¿No tienes cuenta?",
+                        color = Color.Gray,
+                        fontSize = 16.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onRegisterClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = WireframeBlue),
+                        shape = MaterialTheme.shapes.small,
+                        modifier = Modifier.width(160.dp),
+                        enabled = !isLoading // Deshabilitar si está cargando
+                    ) {
+                        Text(
+                            text = "Registrate", // Tal cual aparece en el dibujo (sin tilde según imagen)
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    )
 }
 
 // Componente auxiliar para las etiquetas de texto alineadas a la izquierda
@@ -166,10 +223,11 @@ fun LabelText(text: String) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LoginScreenPreview() {
+    // Para el Preview, necesitamos proporcionar una función dummy para onLoginSuccess
+    // ya que ahora requiere un objeto User.
     LoginScreen(
-        onLoginClick = { _, _ -> },
+        onLoginSuccess = { _ -> },
         onRegisterClick = {},
         onForgotPasswordClick = {}
     )
 }
-

@@ -1,80 +1,67 @@
 package mx.edu.utng.oic.denunciaapp.data.service
 
-import android.content.Context
-import android.content.SharedPreferences
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import mx.edu.utng.oic.denunciaapp.data.model.* // Importa todas las clases Denuncia
-import java.lang.reflect.Type
+import android.util.Log
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.toObject
+import kotlinx.coroutines.tasks.await
+import mx.edu.utng.oic.denunciaapp.data.model.*
+import mx.edu.utng.oic.denunciaapp.data.repository.DenunciaRepository // Importar DenunciaRepository
+import java.util.Date
 
 /**
- * Servicio encargado de gestionar el almacenamiento local de las denuncias
- * usando SharedPreferences y serialización/deserialización con Gson.
- *
- * NOTA: Asume que se ha añadido la dependencia de Gson en build.gradle.kts.
+ * Servicio de negocio para la gestión de denuncias.
+ * Utiliza DenunciaRepository para interactuar con Firestore.
  */
-class DenunciaService(context: Context) {
+class DenunciaService(
+    private val denunciaRepository: DenunciaRepository
+) {
 
-    private val gson = Gson()
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
-    companion object {
-        private const val PREFS_NAME = "DenunciaAppPrefs"
-        private const val KEY_DENUNCIAS = "denuncias_list"
+    /**
+     * Guarda cualquier tipo de Denuncia en Firestore.
+     * @param denuncia El objeto Denuncia a guardar.
+     * @return true si la operación fue exitosa.
+     */
+    suspend fun saveDenuncia(denuncia: Denuncia): Boolean {
+        return denunciaRepository.addDenuncia(denuncia)
     }
 
     /**
-     * Carga todas las denuncias almacenadas localmente.
-     * @return Lista de Denuncia (incluyendo subclases específicas).
+     * Obtiene todas las denuncias asociadas a un ID de usuario.
+     * La lógica de mapeo polimórfico (sealed class) se realiza aquí.
      */
-    fun getLocalDenuncias(): List<Denuncia> {
-        val json = prefs.getString(KEY_DENUNCIAS, null)
-        if (json == null) {
-            return emptyList()
-        }
+    suspend fun getDenunciasByUserId(userId: String): List<Denuncia> {
+        val denuncias = mutableListOf<Denuncia>()
+        try {
+            val querySnapshot = denunciaRepository.getDenunciasCollection()
+                .whereEqualTo("idUser", userId)
+                .get()
+                .await()
 
-        // Gson no maneja bien la deserialización de listas de clases selladas (sealed) directamente.
-        // Se deserializa como una lista de Maps (objetos genéricos) y luego reconstruimos el objeto Denuncia.
-        val type: Type = object : TypeToken<List<Map<String, Any>>>() {}.type
-        val jsonList: List<Map<String, Any>> = gson.fromJson(json, type)
+            for (document in querySnapshot.documents) {
+                // Usamos el campo 'denunciaClassType' para determinar a qué subclase mapear.
+                val type = document.getString(DENUNCIA_TYPE_FIELD)
 
-        return jsonList.mapNotNull { map ->
-            val jsonElement = gson.toJsonTree(map).asJsonObject
-            val classType = jsonElement.get(DENUNCIA_TYPE_FIELD)?.asString ?: return@mapNotNull null
-
-            // Usar el discriminador para saber qué clase deserializar
-            when (classType) {
-                "DenunciaFotografica" -> gson.fromJson(jsonElement, DenunciaFotografica::class.java)
-                "PersonaDesaparecida" -> gson.fromJson(jsonElement, PersonaDesaparecida::class.java)
-                "RoboVehiculo" -> gson.fromJson(jsonElement, RoboVehiculo::class.java)
-                "Extorsion" -> gson.fromJson(jsonElement, Extorsion::class.java)
-                "RoboCasa" -> gson.fromJson(jsonElement, RoboCasa::class.java)
-                "RoboObjeto" -> gson.fromJson(jsonElement, RoboObjeto::class.java)
-                "DenunciaViolencia" -> gson.fromJson(jsonElement, DenunciaViolencia::class.java)
-                else -> null
+                val denuncia = when (type) {
+                    "DenunciaFotografica" -> document.toObject<DenunciaFotografica>()
+                    "PersonaDesaparecida" -> document.toObject<PersonaDesaparecida>()
+                    "RoboVehiculo" -> document.toObject<RoboVehiculo>()
+                    "Extorsion" -> document.toObject<Extorsion>()
+                    "RoboCasa" -> document.toObject<RoboCasa>()
+                    "RoboObjeto" -> document.toObject<RoboObjeto>()
+                    "DenunciaViolencia" -> document.toObject<DenunciaViolencia>()
+                    else -> {
+                        Log.w("DenunciaService", "Clase de denuncia no reconocida o faltante para ID: ${document.id}")
+                        null
+                    }
+                }
+                denuncia?.let { denuncias.add(it) }
             }
+        } catch (e: Exception) {
+            Log.e("DenunciaService", "Error al obtener las denuncias por usuario: $userId", e)
         }
+        return denuncias
     }
 
-    /**
-     * Carga las denuncias asociadas a un usuario específico.
-     */
-    fun getDenunciasByUserId(userId: String): List<Denuncia> {
-        return getLocalDenuncias().filter { it.idUser == userId }
-    }
-
-    /**
-     * Guarda una nueva denuncia en la lista local y actualiza SharedPreferences.
-     * @param denuncia La instancia de Denuncia (cualquiera de sus subclases).
-     */
-    fun saveDenuncia(denuncia: Denuncia) {
-        val currentList = getLocalDenuncias().toMutableList()
-        currentList.add(denuncia)
-        saveList(currentList)
-    }
-
-    private fun saveList(list: List<Denuncia>) {
-        val json = gson.toJson(list)
-        prefs.edit().putString(KEY_DENUNCIAS, json).apply()
-    }
+    // Nota: La función getDenunciasByTipo se puede mover al Service/Repository si es necesaria.
 }
+

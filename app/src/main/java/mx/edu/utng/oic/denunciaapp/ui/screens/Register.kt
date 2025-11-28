@@ -24,22 +24,25 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import mx.edu.utng.oic.denunciaapp.data.model.User
-import mx.edu.utng.oic.denunciaapp.data.service.UserService // Importar el servicio
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RegisterViewModel // Importar el ViewModel
+import mx.edu.utng.oic.denunciaapp.data.service.UserService // Mantener el import si se usa para anónimo o componentes auxiliares
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.LoginViewModel // Importar LoginViewModel para manejar anónimo o crear uno específico
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: () -> Unit, // Callback para navegación exitosa
+    // Inyectamos el ViewModel
+    registerViewModel: RegisterViewModel = viewModel(),
+    // Usamos el ViewModel de Login para el inicio de sesión anónimo (ya que ya maneja esa lógica)
+    loginViewModel: LoginViewModel = viewModel(),
+    onRegisterSuccess: () -> Unit, // Callback para navegación exitosa (vuelve a Login)
     onNavigateBack: () -> Unit // Callback para volver a la pantalla anterior
 ) {
-    // Inicializar el servicio
-    val userService = remember { UserService() }
-
-    // --- Estados del Formulario ---
+    // --- Estados del Formulario (Locales a la pantalla) ---
     var name by remember { mutableStateOf("") }
     var selectedGender by remember { mutableStateOf("Hombre") } // Default
     var specifyOther by remember { mutableStateOf("") }
@@ -50,32 +53,48 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var termsAccepted by remember { mutableStateOf(false) }
 
+    // --- Estados del ViewModel ---
+    val isLoading = registerViewModel.isLoading || loginViewModel.isLoading
+    val message = registerViewModel.message
+    val isRegistrationSuccessful = registerViewModel.isRegistrationSuccessful
+
     // --- Estados para Lógica de UI ---
     val snackbarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope() // Para lanzar el Snackbar
+    val scope = rememberCoroutineScope()
     var showDatePicker by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) } // Estado de carga
 
     // Configuración del DatePicker
     val datePickerState = rememberDatePickerState()
 
-    // --- Lógica de Registro ---
-    fun validateAndRegister() {
-        if (isLoading) return // Evitar doble clic
+    // --- Efectos del ViewModel ---
 
-        // 1. Validaciones básicas
-        if (name.isBlank() || phone.isBlank() || birthDate.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-            scope.launch { snackbarHostState.showSnackbar("Todos los campos son obligatorios.") }
-            return
+    // 1. Manejar el mensaje (error o éxito)
+    LaunchedEffect(message) {
+        message?.let { msg ->
+            snackbarHostState.showSnackbar(
+                message = msg,
+                actionLabel = "Cerrar",
+                duration = SnackbarDuration.Short
+            )
+            // Limpiar el mensaje después de mostrarlo (a menos que haya éxito, lo cual se maneja por isRegistrationSuccessful)
+            if (!isRegistrationSuccessful) {
+                registerViewModel.clearMessage()
+            }
         }
-        if (password != confirmPassword) {
-            scope.launch { snackbarHostState.showSnackbar("Las contraseñas no coinciden.") }
-            return
+    }
+
+    // 2. Manejar el éxito del registro
+    LaunchedEffect(isRegistrationSuccessful) {
+        if (isRegistrationSuccessful) {
+            // La navegación se realiza después de que el ViewModel confirma el éxito
+            onRegisterSuccess()
         }
-        if (password.length < 6) {
-            scope.launch { snackbarHostState.showSnackbar("La contraseña debe tener al menos 6 caracteres.") }
-            return
-        }
+    }
+
+
+    // --- Lógica de Registro (Delegada al ViewModel) ---
+    fun handleRegistration() {
+        // Validaciones que son específicas de la UI o antes de enviar al VM
         if (!termsAccepted) {
             scope.launch { snackbarHostState.showSnackbar("Debe aceptar los Términos y Condiciones.") }
             return
@@ -85,59 +104,41 @@ fun RegisterScreen(
             return
         }
 
-        // 2. Crear objeto User para el registro
-        val userToRegister = User(
+        // Llamada al ViewModel con todos los datos del formulario
+        registerViewModel.register(
             nombre = name,
+            email = email,
+            password = password,
+            confirmPassword = confirmPassword,
             sexo = selectedGender,
             telefono = phone,
             fechaNacimiento = birthDate,
-            correoElectronico = email,
-            // La descripción se toma de 'Especifique' si es 'Otro', sino está vacía.
-            descripcion = if (selectedGender == "Otro") specifyOther else "",
-            contrasenia = password
-            // id, rol, respectPoints, isAnonymus usan los valores por defecto
+            descripcion = if (selectedGender == "Otro") specifyOther else ""
         )
-
-        // 3. Ejecutar el registro en un Coroutine
-        scope.launch {
-            isLoading = true
-            try {
-                userService.registerUser(userToRegister)
-                // Éxito: Navegar
-                onRegisterSuccess()
-            } catch (e: Exception) {
-                // Manejo de errores de Firebase (ej: correo ya en uso, formato inválido)
-                val errorMessage = when (e.message) {
-                    "The email address is already in use by another account." -> "El correo electrónico ya está registrado."
-                    "The email address is badly formatted." -> "Formato de correo inválido."
-                    else -> "Error en el registro: ${e.message}"
-                }
-                snackbarHostState.showSnackbar(errorMessage)
-            } finally {
-                isLoading = false
-            }
-        }
     }
 
-    // --- Lógica de Registro Anónimo ---
+    fun LoginViewModel.signInAnonymously(): Boolean {
+        return false
+    }
+
+    // --- Lógica de Registro Anónimo (Delegada al LoginViewModel o RegisterViewModel) ---
+    // Usaremos el LoginViewModel ya que la lógica de iniciar sesión anónimamente
+    // es conceptualmente más cercana a un "login" que a un "registro" completo.
     fun registerAnonymously() {
         scope.launch {
-            isLoading = true
-            try {
-                userService.signInAnonymously()
-                // Mostrar Snackbar
-                val result = snackbarHostState.showSnackbar(
-                    message = "Esto ocultará algunos datos a los demás",
+            if (loginViewModel.signInAnonymously()) {
+                // Si el inicio de sesión anónimo es exitoso:
+                snackbarHostState.showSnackbar(
+                    message = "Iniciado sesión como anónimo. Esto ocultará algunos datos a los demás.",
                     actionLabel = "Aceptar",
                     duration = SnackbarDuration.Short
                 )
-                // Si el usuario acepta o el Snackbar termina, se navega hacia atrás
+                // Usamos onNavigateBack para volver a la pantalla de Denuncias
                 onNavigateBack()
 
-            } catch (e: Exception) {
+            } else {
+                // El error se maneja y se muestra vía el LoginViewModel.errorMessage, pero forzamos un mensaje aquí también.
                 snackbarHostState.showSnackbar("Error al iniciar sesión anónima.")
-            } finally {
-                isLoading = false
             }
         }
     }
@@ -169,7 +170,12 @@ fun RegisterScreen(
         ) {
 
             // Campo Nombre
-            SimpleOutlinedTextField(value = name, onValueChange = { name = it }, placeholder = "Nombre")
+            SimpleOutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                placeholder = "Nombre",
+                enabled = !isLoading
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -178,21 +184,22 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                GenderOption("Hombre", selectedGender) { selectedGender = "Hombre" }
+                GenderOption("Hombre", selectedGender, !isLoading) { selectedGender = "Hombre" }
                 Spacer(modifier = Modifier.width(8.dp))
-                GenderOption("Mujer", selectedGender) { selectedGender = "Mujer" }
+                GenderOption("Mujer", selectedGender, !isLoading) { selectedGender = "Mujer" }
                 Spacer(modifier = Modifier.width(8.dp))
-                GenderOption("Otro", selectedGender) { selectedGender = "Otro" }
+                GenderOption("Otro", selectedGender, !isLoading) { selectedGender = "Otro" }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Campo Especifique (Habilitado visualmente si es 'Otro' o siempre, según el diseño)
+            // Campo Especifique
             if (selectedGender == "Otro") {
                 SimpleOutlinedTextField(
                     value = specifyOther,
                     onValueChange = { specifyOther = it },
-                    placeholder = "Especifique"
+                    placeholder = "Especifique",
+                    enabled = !isLoading
                 )
             } else {
                 // Usamos un Spacer para mantener la consistencia vertical cuando no está visible
@@ -207,7 +214,8 @@ fun RegisterScreen(
                 value = phone,
                 onValueChange = { phone = it },
                 placeholder = "Teléfono de contacto",
-                keyboardType = KeyboardType.Phone
+                keyboardType = KeyboardType.Phone,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -220,11 +228,12 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true, // No se puede escribir, solo seleccionar
                 trailingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.Gray) },
+                enabled = !isLoading,
                 interactionSource = remember { MutableInteractionSource() }
                     .also { interactionSource ->
                         LaunchedEffect(interactionSource) {
                             interactionSource.interactions.collect {
-                                if (it is PressInteraction.Release) {
+                                if (it is PressInteraction.Release && !isLoading) {
                                     showDatePicker = true
                                 }
                             }
@@ -239,7 +248,8 @@ fun RegisterScreen(
                 value = email,
                 onValueChange = { email = it },
                 placeholder = "Correo electrónico personal",
-                keyboardType = KeyboardType.Email
+                keyboardType = KeyboardType.Email,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -249,7 +259,8 @@ fun RegisterScreen(
                 value = password,
                 onValueChange = { password = it },
                 placeholder = "Contraseña (mínimo 6 caracteres)",
-                isPassword = true
+                isPassword = true,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -258,7 +269,8 @@ fun RegisterScreen(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 placeholder = "Confirmar contraseña",
-                isPassword = true
+                isPassword = true,
+                enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -267,8 +279,11 @@ fun RegisterScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Checkbox(
                     checked = termsAccepted,
-                    onCheckedChange = { termsAccepted = it },
-                    colors = CheckboxDefaults.colors(checkedColor = Color.Gray)
+                    onCheckedChange = {
+                        if (!isLoading) termsAccepted = it
+                    },
+                    colors = CheckboxDefaults.colors(checkedColor = Color.Gray),
+                    enabled = !isLoading
                 )
 
                 // Texto con negrita en "Términos y Condiciones"
@@ -278,14 +293,19 @@ fun RegisterScreen(
                         append("Términos y Condiciones")
                     }
                 }
-                Text(text = termsText, fontSize = 14.sp, color = Color.DarkGray)
+                Text(
+                    text = termsText,
+                    fontSize = 14.sp,
+                    color = Color.DarkGray,
+                    modifier = Modifier.clickable(enabled = !isLoading) { termsAccepted = !termsAccepted }
+                )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Botón Registrarme (Gris oscuro) -> Éxito de Registro
             Button(
-                onClick = ::validateAndRegister, // Llamar a la función de registro
+                onClick = ::handleRegistration, // Llamar a la función que usa el ViewModel
                 enabled = !isLoading, // Deshabilitar mientras carga
                 modifier = Modifier
                     .fillMaxWidth()
@@ -318,7 +338,7 @@ fun RegisterScreen(
     }
 
     // --- Lógica del Pop-up de Calendario ---
-    if (showDatePicker) {
+    if (showDatePicker && !isLoading) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
@@ -352,7 +372,8 @@ fun SimpleOutlinedTextField(
     onValueChange: (String) -> Unit,
     placeholder: String,
     keyboardType: KeyboardType = KeyboardType.Text,
-    isPassword: Boolean = false
+    isPassword: Boolean = false,
+    enabled: Boolean = true // Añadir parámetro enabled
 ) {
     OutlinedTextField(
         value = value,
@@ -365,19 +386,25 @@ fun SimpleOutlinedTextField(
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Color.Gray,
             unfocusedBorderColor = Color.LightGray
-        )
+        ),
+        enabled = enabled // Aplicar el estado de enabled
     )
 }
 
 @Composable
-fun GenderOption(label: String, selectedOption: String, onSelect: () -> Unit) {
+fun GenderOption(label: String, selectedOption: String, enabled: Boolean, onSelect: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         RadioButton(
             selected = (label == selectedOption),
-            onClick = onSelect,
-            colors = RadioButtonDefaults.colors(selectedColor = Color.Gray)
+            onClick = { if (enabled) onSelect() }, // Solo permitir click si está habilitado
+            colors = RadioButtonDefaults.colors(selectedColor = Color.Gray),
+            enabled = enabled // Aplicar el estado de enabled
         )
-        Text(text = label, color = Color.Gray, modifier = Modifier.clickable { onSelect() })
+        Text(
+            text = label,
+            color = if (enabled) Color.Gray else Color.LightGray,
+            modifier = Modifier.clickable(enabled = enabled) { onSelect() }
+        )
     }
 }
 

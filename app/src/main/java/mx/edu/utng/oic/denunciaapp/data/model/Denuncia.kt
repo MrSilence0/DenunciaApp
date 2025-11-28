@@ -2,6 +2,10 @@ package mx.edu.utng.oic.denunciaapp.data.model
 
 import java.util.Date
 
+// Necesario para la serialización/deserialización de objetos con Gson,
+// ya que es una sealed class. Se usará este campo como discriminador.
+const val DENUNCIA_TYPE_FIELD = "denunciaClassType"
+
 enum class TipoIncidente(val id: Int) {
     DENUNCIA_FOTOGRAFICA(1),
     PERSONA_DESAPARECIDA(2),
@@ -16,9 +20,10 @@ enum class TipoIncidente(val id: Int) {
 sealed class Denuncia {
     abstract val id: String
     abstract val tipo: TipoIncidente
-    abstract val status: String
-    abstract val idUser: String
+    abstract val idUser: String // ID del usuario activo
     abstract val creationDate: Date
+    // Nuevo campo para la serialización/deserialización (discriminador)
+    abstract val denunciaClassType: String
 }
 
 
@@ -27,14 +32,14 @@ sealed class Denuncia {
  */
 data class DenunciaFotografica(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val descripcion: String,
     val locationAddress: String? = null,
     val latitud: Double? = null,
     val longitud: Double? = null,
-    override val tipo: TipoIncidente = TipoIncidente.DENUNCIA_FOTOGRAFICA
+    override val tipo: TipoIncidente = TipoIncidente.DENUNCIA_FOTOGRAFICA,
+    override val denunciaClassType: String = "DenunciaFotografica" // Discriminador
 ) : Denuncia()
 
 
@@ -43,7 +48,6 @@ data class DenunciaFotografica(
  */
 data class PersonaDesaparecida(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val nombreDesaparecido: String,
@@ -51,7 +55,8 @@ data class PersonaDesaparecida(
     val descripcionFisica: String,
     val vestimenta: String,
     val edad: Int,
-    override val tipo: TipoIncidente = TipoIncidente.PERSONA_DESAPARECIDA
+    override val tipo: TipoIncidente = TipoIncidente.PERSONA_DESAPARECIDA,
+    override val denunciaClassType: String = "PersonaDesaparecida" // Discriminador
 ) : Denuncia()
 
 
@@ -60,7 +65,6 @@ data class PersonaDesaparecida(
  */
 data class RoboVehiculo(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val placas: String,
@@ -69,7 +73,8 @@ data class RoboVehiculo(
     val color: String,
     val anio: Int,
     val nombreReportante: String,
-    override val tipo: TipoIncidente = TipoIncidente.ROBO_VEHICULO
+    override val tipo: TipoIncidente = TipoIncidente.ROBO_VEHICULO,
+    override val denunciaClassType: String = "RoboVehiculo" // Discriminador
 ) : Denuncia()
 
 
@@ -78,12 +83,12 @@ data class RoboVehiculo(
  */
 data class Extorsion(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val numeroTelefonico: String,
     val descripcion: String,
-    override val tipo: TipoIncidente = TipoIncidente.EXTORSION
+    override val tipo: TipoIncidente = TipoIncidente.EXTORSION,
+    override val denunciaClassType: String = "Extorsion" // Discriminador
 ) : Denuncia()
 
 
@@ -92,7 +97,6 @@ data class Extorsion(
  */
 data class RoboCasa(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val descripcion: String,
@@ -100,7 +104,8 @@ data class RoboCasa(
     val latitud: Double? = null,
     val longitud: Double? = null,
     val telefonoContacto: String,
-    override val tipo: TipoIncidente = TipoIncidente.ROBO_CASA
+    override val tipo: TipoIncidente = TipoIncidente.ROBO_CASA,
+    override val denunciaClassType: String = "RoboCasa" // Discriminador
 ) : Denuncia()
 
 
@@ -109,7 +114,6 @@ data class RoboCasa(
  */
 data class RoboObjeto(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val tipoObjeto: String,
@@ -120,7 +124,8 @@ data class RoboObjeto(
     val locationAddress: String? = null,
     val latitud: Double? = null,
     val longitud: Double? = null,
-    override val tipo: TipoIncidente = TipoIncidente.ROBO_OBJETO
+    override val tipo: TipoIncidente = TipoIncidente.ROBO_OBJETO,
+    override val denunciaClassType: String = "RoboObjeto" // Discriminador
 ) : Denuncia()
 
 
@@ -129,7 +134,6 @@ data class RoboObjeto(
  */
 data class DenunciaViolencia(
     override val id: String,
-    override val status: String,
     override val idUser: String,
     override val creationDate: Date,
     val descripcion: String,
@@ -138,5 +142,7 @@ data class DenunciaViolencia(
     val locationAddress: String? = null,
     val latitud: Double? = null,
     val longitud: Double? = null,
-    override val tipo: TipoIncidente = TipoIncidente.DENUNCIA_VIOLENCIA
+    override val tipo: TipoIncidente = TipoIncidente.DENUNCIA_VIOLENCIA,
+    override val denunciaClassType: String = "DenunciaViolencia" // Discriminador
 ) : Denuncia()
+

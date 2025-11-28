@@ -17,7 +17,7 @@ import mx.edu.utng.oic.denunciaapp.ui.screens.DenunciasScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.AgenciasScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.CreateForumScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.DenunciaFotograficaScreen
-import mx.edu.utng.oic.denunciaapp.ui.screens.MisDenunciasScreen
+//import mx.edu.utng.oic.denunciaapp.ui.screens.MisDenunciasScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.PersonaDesaparecidaScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.RoboVehiculoScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.RoboCasaScreen
@@ -30,6 +30,7 @@ import mx.edu.utng.oic.denunciaapp.ui.screens.PostsScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.ForgotPasswordScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.Foro
 import mx.edu.utng.oic.denunciaapp.ui.screens.MenuScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.MisDenunciasScreen
 
 
 /**
@@ -50,19 +51,14 @@ fun AppNavHost(
         // --- 1. Rutas de Autenticación/Perfil ---
 
         composable(AppScreen.Login.route) {
-            // CORREGIDO: Se ajustan los parámetros para coincidir con la nueva firma de LoginScreen:
-            // onLoginClick: (String, String) -> Unit, onRegisterClick: () -> Unit, onForgotPasswordClick: () -> Unit
             LoginScreen(
-                onLoginClick = { email, password -> // Acepta email y password, pero solo navega
-                    // NOTA: Aquí iría la llamada a tu ViewModel/servicio de autenticación.
-                    // Asumimos éxito para la navegación:
+                onLoginSuccess = { user -> // Acepta el objeto User
+                    // Aquí se maneja la navegación después de que el ViewModel confirma el éxito
                     navController.navigate(AppScreen.Denuncias.route) {
                         popUpTo(AppScreen.Login.route) { inclusive = true }
                     }
                 },
-                // Se renombra el callback de registro para coincidir con la firma
                 onRegisterClick = { navController.navigate(AppScreen.Register.route) },
-                // Se añade el callback faltante para la nueva ruta (asumiendo que AppScreen tiene 'ForgotPassword')
                 onForgotPasswordClick = { navController.navigate(AppScreen.ForgotPassword.route) }
             )
         }
@@ -174,11 +170,9 @@ fun AppNavHost(
 
         composable(AppScreen.MisDenuncias.route) {
             MisDenunciasScreen(
-                // Callback para regresar a la pantalla anterior (Denuncias.kt)
+                // Callback para regresar a la pantalla anterior
                 onNavigateBack = { navController.popBackStack() },
-
-                onOpenDrawer = { navController.navigate(AppScreen.Menu.route) }, // Se mantiene por si MisDenuncias tuviera un Top Bar diferente
-
+                onOpenDrawer = { /* Si no se usa el Drawer, se puede dejar vacío o llamar a una función */ },
                 onNavigateToDenunciaDetail = { denunciaId -> navController.navigate("${AppScreen.DenunciaDetail.route}/$denunciaId") } // Navega a la vista de detalle
             )
         }
@@ -188,15 +182,16 @@ fun AppNavHost(
             AgenciasScreen(onNavigateBack = { navController.popBackStack() })
         }
 
-        // FORMULARIOS DE DENUNCIA
+// FORMULARIOS DE DENUNCIA
 
         composable(AppScreen.DenunciaFotografica.route) {
+            // 1. Uso de onSuccess en lugar de onSave.
+            // 2. onCancel regresa a la pila anterior.
+            // 3. onSuccess también regresa a la pila anterior después de un guardado exitoso
+            //    (la lógica de guardado está en el ViewModel).
             DenunciaFotograficaScreen(
                 onCancel = { navController.popBackStack() },
-                onSave = { desc, loc, uri ->
-                    // Lógica de guardado y luego regresa
-                    navController.popBackStack()
-                }
+                onSuccess = { navController.popBackStack() }
             )
         }
 
@@ -261,3 +256,4 @@ fun AppNavHost(
         }
     }
 }
+
