@@ -53,6 +53,11 @@ object DenunciaAppViewModelFactory {
     fun createRoboObjetoViewModelFactory(): ViewModelProvider.Factory {
         return RoboObjetoViewModel.Factory(denunciaService, userService)
     }
+
+    fun createDenunciaViolenciaViewModelFactory(): DenunciaViolenciaViewModelFactory {
+        return DenunciaViolenciaViewModelFactory(denunciaService, userService)
+    }
 }
+
 
 

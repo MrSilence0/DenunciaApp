@@ -1,8 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
 import android.Manifest
-import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,26 +29,33 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
 import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 import mx.edu.utng.oic.denunciaapp.ui.utils.* // Importar MapSelectionDialog, checkLocationPermission, getCurrentLocation, getAddressFromLatLng
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaViolenciaViewModel // Importar el ViewModel
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DenunciaViolenciaScreen(
     onCancel: () -> Unit,
-    onSave: (
-        descripcionHecho: String,
-        ubicacion: String,
-        descripcionConducta: String,
-        telefono: String,
-        confirmarTelefono: String,
-        imageUri: String?
-    ) -> Unit
+    onReportSaved: () -> Unit // Nueva función de callback para cuando el reporte se guarde
 ) {
+    // --- ViewModel y Observación de Estados ---
+    val viewModel: DenunciaViolenciaViewModel = viewModel(
+        factory = DenunciaAppViewModelFactory.createDenunciaViolenciaViewModelFactory()
+    )
+    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val saveError by viewModel.saveError.collectAsStateWithLifecycle()
+    val saveSuccess by viewModel.saveSuccess.collectAsStateWithLifecycle()
+
+
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
@@ -60,7 +65,7 @@ fun DenunciaViolenciaScreen(
     var descripcionConducta by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var confirmarTelefono by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) } // No se usa en el modelo de datos final, pero se mantiene para la UI
 
     // --- Estados del Mapa/Ubicación ---
     var showMapDialog by remember { mutableStateOf(false) }
@@ -110,6 +115,28 @@ fun DenunciaViolenciaScreen(
         }
     }
 
+    // --- Manejo de Resultado de Guardado ---
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            onReportSaved()
+            // Opcional: limpiar el formulario después del éxito
+            viewModel.resetStates()
+        }
+    }
+
+    // --- Snackbar Host State para mostrar mensajes de error ---
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(saveError) {
+        saveError?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "Aceptar",
+                duration = SnackbarDuration.Short
+            )
+            viewModel.resetStates() // Limpiar error después de mostrar
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -125,6 +152,7 @@ fun DenunciaViolenciaScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = Color.White // Fondo blanco
     ) { paddingValues ->
         Column(
@@ -137,7 +165,7 @@ fun DenunciaViolenciaScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Área de Previsualización de Imagen (Sin cambios) ---
+            // --- Área de Previsualización de Imagen ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -163,7 +191,7 @@ fun DenunciaViolenciaScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Botones para Seleccionar Imagen (Sin cambios) ---
+            // --- Botones para Seleccionar Imagen ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -195,7 +223,7 @@ fun DenunciaViolenciaScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Campo "Describe el hecho" (Sin cambios) ---
+            // --- Campo "Describe el hecho" ---
             LabelText("Describe el hecho")
             OutlinedTextField(
                 value = descripcionHecho,
@@ -241,7 +269,7 @@ fun DenunciaViolenciaScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Campo "Describe la conducta" (Sin cambios) ---
+            // --- Campo "Describe la conducta" ---
             LabelText("Describe la conducta")
             OutlinedTextField(
                 value = descripcionConducta,
@@ -256,11 +284,11 @@ fun DenunciaViolenciaScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Campo "Teléfono de contacto" (Sin cambios) ---
+            // --- Campo "Teléfono de contacto" ---
             LabelText("Teléfono de contacto")
             OutlinedTextField(
                 value = telefono,
-                onValueChange = { telefono = it },
+                onValueChange = { if (it.length <= 10) telefono = it }, // Límite a 10 dígitos
                 placeholder = { Text("Número a 10 dígitos", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
@@ -271,11 +299,11 @@ fun DenunciaViolenciaScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Campo "Confirmar teléfono" (Sin cambios) ---
+            // --- Campo "Confirmar teléfono" ---
             LabelText("Confirmar teléfono")
             OutlinedTextField(
                 value = confirmarTelefono,
-                onValueChange = { confirmarTelefono = it },
+                onValueChange = { if (it.length <= 10) confirmarTelefono = it }, // Límite a 10 dígitos
                 placeholder = { Text("Repita el número", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
@@ -286,9 +314,9 @@ fun DenunciaViolenciaScreen(
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Texto descriptivo (Sin cambios) ---
+            // --- Texto descriptivo ---
             Text(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum",
+                text = "Su información es confidencial y solo será utilizada para los fines de la denuncia. Asegúrese de que todos los datos sean correctos antes de guardar.",
                 fontSize = 12.sp,
                 color = Color.Gray,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
@@ -296,26 +324,32 @@ fun DenunciaViolenciaScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Botón "Guardar" (Sin cambios) ---
+            // --- Botón "Guardar" ---
             Button(
                 onClick = {
-                    onSave(
-                        descripcionHecho,
-                        // Guardamos el texto de la ubicación legible, la latLng real se puede inferir o guardar aparte
-                        ubicacionText,
-                        descripcionConducta,
-                        telefono,
-                        confirmarTelefono,
-                        selectedImageUri
+                    viewModel.submitDenuncia(
+                        descripcionHecho = descripcionHecho,
+                        ubicacionText = ubicacionText.ifBlank { null }, // Guardamos la dirección legible
+                        descripcionConducta = descripcionConducta,
+                        telefono = telefono,
+                        confirmarTelefono = confirmarTelefono,
+                        latitud = selectedLatLng.latitude, // Latitud obtenida del estado del mapa
+                        longitud = selectedLatLng.longitude, // Longitud obtenida del estado del mapa
+                        imageUri = selectedImageUri // Campo no usado en el modelo de datos final
                     )
                 },
+                enabled = !isSaving, // Deshabilitar mientras se guarda
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                if (isSaving) {
+                    CircularProgressIndicator(color = Color.DarkGray, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -330,6 +364,7 @@ fun DenunciaViolenciaScreen(
             onDismiss = { showMapDialog = false },
             onLocationConfirmed = { newLatLng ->
                 selectedLatLng = newLatLng
+                // Actualizar la dirección legible al confirmar la ubicación
                 ubicacionText = getAddressFromLatLng(context, newLatLng)
                 showMapDialog = false
             },
@@ -345,6 +380,6 @@ fun DenunciaViolenciaScreen(
 fun DenunciaViolenciaPreview() {
     DenunciaViolenciaScreen(
         onCancel = {},
-        onSave = { _, _, _, _, _, _ -> }
+        onReportSaved = {}
     )
 }

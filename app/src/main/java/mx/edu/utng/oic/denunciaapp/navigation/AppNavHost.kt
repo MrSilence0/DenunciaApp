@@ -230,8 +230,10 @@ fun AppNavHost(
         }
 
         composable(AppScreen.DenunciaViolencia.route) {
-            DenunciaViolenciaScreen(onCancel = { navController.popBackStack() },
-                onSave = { descripcionHecho, ubicacion, descripcionConducta, telefono, confirmarTelefono, imageUri ->
+            DenunciaViolenciaScreen(
+                onCancel = { navController.popBackStack() },
+
+                onReportSaved = {
 
                     navController.popBackStack()
                 }
