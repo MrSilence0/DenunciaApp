@@ -1,7 +1,5 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
-import android.app.Activity
-import android.content.Context
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -30,12 +28,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-
-// Importar los componentes comunes y utilidades de mapa
 import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
 import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
@@ -44,21 +41,23 @@ import mx.edu.utng.oic.denunciaapp.ui.utils.MapSelectionDialog
 import mx.edu.utng.oic.denunciaapp.ui.utils.checkLocationPermission
 import mx.edu.utng.oic.denunciaapp.ui.utils.getCurrentLocation
 import mx.edu.utng.oic.denunciaapp.ui.utils.getAddressFromLatLng
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RoboObjetoViewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory // Asumiendo la factoría central
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoboObjetoScreen(
-    onNavigateBack: () -> Unit,
-    onSave: (
-        tipoObjeto: String,
-        marca: String,
-        estado: String,
-        color: String,
-        anio: String,
-        ubicacion: String,
-        imageUri: String?
-    ) -> Unit
+    onNavigateBack: () -> Unit
 ) {
+    // --- 1. Inyección de ViewModel y Estados ---
+    val viewModel: RoboObjetoViewModel = viewModel(
+        factory = DenunciaAppViewModelFactory.createRoboObjetoViewModelFactory()
+    )
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveError by viewModel.saveError.collectAsState() // CORREGIDO: Usar saveError en lugar de errorState
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+
     // --- Contexto y Cliente de Ubicación ---
     val context = LocalContext.current
     val fusedLocationClient: FusedLocationProviderClient = remember {
@@ -72,7 +71,7 @@ fun RoboObjetoScreen(
     var color by remember { mutableStateOf("") }
     var anio by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) } // No usado en VM, placeholder
 
     // --- Estados del Mapa y Ubicación ---
     var showMapDialog by remember { mutableStateOf(false) }
@@ -82,6 +81,33 @@ fun RoboObjetoScreen(
         mutableStateOf(CameraPosition.fromLatLngZoom(DefaultLocation, 15f))
     }
     var locationPermissionGranted by remember { mutableStateOf(checkLocationPermission(context)) }
+
+    // --- Feedback y Snackbar ---
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // --- 2. Efecto para manejar éxito/error de guardado ---
+    LaunchedEffect(saveSuccess, saveError) {
+        when {
+            saveSuccess -> {
+                snackbarHostState.showSnackbar(
+                    message = "Denuncia de robo de objeto guardada con éxito.",
+                    actionLabel = "OK",
+                    duration = SnackbarDuration.Short
+                )
+                viewModel.resetStates()
+                onNavigateBack()
+            }
+            saveError != null -> {
+                snackbarHostState.showSnackbar(
+                    message = "Error: $saveError",
+                    actionLabel = "Cerrar",
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.resetStates()
+            }
+        }
+    }
+
 
     // --- Launcher para Permisos de Ubicación ---
     val locationPermissionLauncher = rememberLauncherForActivityResult(
@@ -146,7 +172,8 @@ fun RoboObjetoScreen(
                 }
             )
         },
-        containerColor = Color.White // Fondo blanco
+        snackbarHost = { SnackbarHost(snackbarHostState) }, // 3. Agregar SnackbarHost
+        containerColor = Color.White
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -158,11 +185,11 @@ fun RoboObjetoScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Área de Previsualización de Imagen ---
+            // --- Área de Previsualización de Imagen (Placeholder) ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp) // Altura para el placeholder de imagen
+                    .height(200.dp)
                     .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .border(1.dp, WireframeGray, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
@@ -184,7 +211,7 @@ fun RoboObjetoScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Botones para Seleccionar Imagen (Lógica placeholder) ---
+            // --- Botones para Seleccionar Imagen (Placeholder) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -216,7 +243,7 @@ fun RoboObjetoScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Campo "Tipo de objeto" ---
+            // --- Campos del Formulario ---
             LabelText("Tipo de objeto")
             OutlinedTextField(
                 value = tipoObjeto,
@@ -231,7 +258,6 @@ fun RoboObjetoScreen(
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Campos restantes (Marca, Estado, Color, Año) ---
             LabelText("Marca")
             OutlinedTextField(
                 value = marca,
@@ -295,13 +321,12 @@ fun RoboObjetoScreen(
                 onValueChange = { ubicacion = it },
                 placeholder = { Text("Toque para seleccionar en el mapa", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
-                readOnly = true, // Evita escritura manual directa para forzar el mapa
+                readOnly = true,
                 trailingIcon = {
                     IconButton(onClick = openMapAction) {
                         Icon(Icons.Default.LocationOn, contentDescription = "Abrir mapa", tint = WireframeGray)
                     }
                 },
-                // Permite abrir el mapa al tocar el campo
                 interactionSource = remember { MutableInteractionSource() }
                     .also { interactionSource ->
                         LaunchedEffect(interactionSource) {
@@ -334,23 +359,34 @@ fun RoboObjetoScreen(
             // --- Botón "Guardar" ---
             Button(
                 onClick = {
-                    onSave(
+                    // 4. Llamar al ViewModel con los datos y coordenadas
+                    viewModel.submitDenuncia(
                         tipoObjeto,
                         marca,
                         estado,
                         color,
                         anio,
-                        ubicacion,
-                        selectedImageUri
+                        ubicacion, // locationAddress
+                        markerLocation?.latitude,
+                        markerLocation?.longitude
                     )
                 },
+                enabled = !isSaving, // Deshabilitar mientras se guarda
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.DarkGray,
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -376,6 +412,5 @@ fun RoboObjetoScreen(
 fun RoboObjetoPreview() {
     RoboObjetoScreen(
         onNavigateBack = {},
-        onSave = { _, _, _, _, _, _, _ -> }
     )
 }

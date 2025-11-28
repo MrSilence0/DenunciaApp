@@ -217,12 +217,8 @@ fun AppNavHost(
         }
 
         composable(AppScreen.RoboObjeto.route) {
-            RoboObjetoScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
-                onSave = { tipo, marca, estado, color, anio, ubicacion, uri ->
-                    // Aquí iría la lógica para guardar el reporte del objeto robado
-                    // Por ejemplo: viewModel.saveRoboObjeto(data)
-                    navController.popBackStack() // Volver después de guardar
-                }
+            RoboObjetoScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

@@ -1,5 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.viewmodel
 
+import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import mx.edu.utng.oic.denunciaapp.data.repository.DenunciaRepository
 import mx.edu.utng.oic.denunciaapp.data.service.DenunciaService
@@ -47,6 +48,10 @@ object DenunciaAppViewModelFactory {
 
     fun createRoboCasaViewModelFactory(): RoboCasaViewModelFactory {
         return RoboCasaViewModelFactory(denunciaService, userService)
+    }
+
+    fun createRoboObjetoViewModelFactory(): ViewModelProvider.Factory {
+        return RoboObjetoViewModel.Factory(denunciaService, userService)
     }
 }
 
