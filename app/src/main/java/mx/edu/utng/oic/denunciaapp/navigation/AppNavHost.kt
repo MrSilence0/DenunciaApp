@@ -231,23 +231,17 @@ fun AppNavHost(
         }
 
         composable(AppScreen.Extorsion.route) {
-            ExtorsionScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
-                onSave = { numeroTelefonico, descripcionHechos, audioUri ->
-                    // Aquí iría la lógica para guardar el reporte de extorsión
-                    // Por ejemplo: viewModel.saveExtorsion(data)
-                    navController.popBackStack() // Volver después de guardar
-                }
+            ExtorsionScreen(
+                onNavigateBack = { navController.popBackStack() }
+
             )
         }
-
-
 
         composable(AppScreen.DenunciaViolencia.route) {
             DenunciaViolenciaScreen(onCancel = { navController.popBackStack() },
                 onSave = { descripcionHecho, ubicacion, descripcionConducta, telefono, confirmarTelefono, imageUri ->
-                    // Aquí iría la lógica para guardar el reporte de violencia de género
-                    // Por ejemplo: viewModel.saveViolencia(data)
-                    navController.popBackStack() // Volver después de guardar
+
+                    navController.popBackStack()
                 }
             )
         }

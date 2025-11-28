@@ -40,4 +40,10 @@ object DenunciaAppViewModelFactory {
     fun createRoboVehiculoViewModelFactory(): RoboVehiculoViewModelFactory {
         return RoboVehiculoViewModelFactory(denunciaService, userService)
     }
+
+    fun createExtorsionViewModelFactory(): ExtorsionViewModelFactory {
+        return ExtorsionViewModelFactory(denunciaService, userService)
+    }
 }
+
+

@@ -23,6 +23,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.ExtorsionViewModel // Importar el ViewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory // Importar la factoría central
 
 // Importar los componentes comunes y estilos
 import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
@@ -35,20 +38,30 @@ val BlueAttachButton = Color(0xFF1E88E5)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtorsionScreen(
-    onNavigateBack: () -> Unit, // Renombrado de 'onCancel' a 'onNavigateBack'
-    onSave: (
-        numeroTelefonico: String,
-        descripcionHechos: String,
-        audioUri: String? // URI del archivo de audio adjunto (simulado)
-    ) -> Unit
+    onNavigateBack: () -> Unit,
+    // El ViewModel se inyecta y se inicializa usando la factoría
+    viewModel: ExtorsionViewModel = viewModel(
+        factory = DenunciaAppViewModelFactory.createExtorsionViewModelFactory()
+    )
 ) {
-    // --- Estados del formulario ---
+    // --- Observación de Estados del ViewModel ---
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveError by viewModel.saveError.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+
+    // --- Estados del formulario local ---
     var numeroTelefonico by remember { mutableStateOf("") }
     var descripcionHechos by remember { mutableStateOf("") }
-    var audioAdjuntoUri by remember { mutableStateOf<String?>(null) } // URI del audio
+    var audioAdjuntoUri by remember { mutableStateOf<String?>(null) } // URI del audio (simulado)
+    var isPlaying by remember { mutableStateOf(false) } // Estado para simular la reproducción
 
-    // Estado para simular la reproducción de audio
-    var isPlaying by remember { mutableStateOf(false) }
+    // --- Efecto para Navegación en Éxito ---
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            onNavigateBack() // Vuelve a la pantalla anterior al guardar con éxito
+            viewModel.resetStates()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -59,7 +72,10 @@ fun ExtorsionScreen(
                     titleContentColor = Color.Black
                 ),
                 actions = {
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(
+                        onClick = onNavigateBack,
+                        enabled = !isSaving // Deshabilitar si está guardando
+                    ) {
                         Text("Cancelar", color = RedCancelButton, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -88,6 +104,7 @@ fun ExtorsionScreen(
                     keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next
                 ),
+                enabled = !isSaving, // Deshabilitar mientras se guarda
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
                     unfocusedBorderColor = Color.LightGray
@@ -105,6 +122,7 @@ fun ExtorsionScreen(
                     .fillMaxWidth()
                     .heightIn(min = 100.dp),
                 maxLines = 5,
+                enabled = !isSaving, // Deshabilitar mientras se guarda
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
@@ -113,7 +131,7 @@ fun ExtorsionScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Botón "Adjuntar llamada" ---
+            // --- Botón "Adjuntar llamada" (Simulación) ---
             Button(
                 onClick = {
                     // Simulación de adjuntar un archivo de audio
@@ -121,6 +139,7 @@ fun ExtorsionScreen(
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = BlueAttachButton),
                 shape = RoundedCornerShape(8.dp),
+                enabled = !isSaving, // Deshabilitar mientras se guarda
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
@@ -150,13 +169,14 @@ fun ExtorsionScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(onClick = { /* Anterior */ }) { Icon(Icons.Default.SkipPrevious, contentDescription = "Pista anterior", tint = WireframeGray) }
-                    IconButton(onClick = { /* Rewind */ }) { Icon(Icons.Default.FastRewind, contentDescription = "Rebobinar", tint = WireframeGray) }
+                    IconButton(onClick = { /* Anterior */ }, enabled = !isSaving) { Icon(Icons.Default.SkipPrevious, contentDescription = "Pista anterior", tint = WireframeGray) }
+                    IconButton(onClick = { /* Rewind */ }, enabled = !isSaving) { Icon(Icons.Default.FastRewind, contentDescription = "Rebobinar", tint = WireframeGray) }
 
                     // Botón Play/Pause central
                     Button(
                         onClick = { isPlaying = !isPlaying },
                         modifier = Modifier.size(56.dp),
+                        enabled = !isSaving,
                         shape = RoundedCornerShape(50),
                         colors = ButtonDefaults.buttonColors(containerColor = BlueAttachButton)
                     ) {
@@ -168,8 +188,8 @@ fun ExtorsionScreen(
                         )
                     }
 
-                    IconButton(onClick = { /* Fast Forward */ }) { Icon(Icons.Default.FastForward, contentDescription = "Adelantar", tint = WireframeGray) }
-                    IconButton(onClick = { /* Siguiente */ }) { Icon(Icons.Default.SkipNext, contentDescription = "Pista siguiente", tint = WireframeGray) }
+                    IconButton(onClick = { /* Fast Forward */ }, enabled = !isSaving) { Icon(Icons.Default.FastForward, contentDescription = "Adelantar", tint = WireframeGray) }
+                    IconButton(onClick = { /* Siguiente */ }, enabled = !isSaving) { Icon(Icons.Default.SkipNext, contentDescription = "Pista siguiente", tint = WireframeGray) }
                 }
             } else {
                 Spacer(modifier = Modifier.height(50.dp)) // Espacio para mantener el layout
@@ -188,27 +208,46 @@ fun ExtorsionScreen(
 
             // --- Botón "Guardar" ---
             Button(
-                onClick = { onSave(numeroTelefonico, descripcionHechos, audioAdjuntoUri) },
+                onClick = {
+                    viewModel.submitDenuncia(numeroTelefonico, descripcionHechos)
+                },
+                enabled = !isSaving && numeroTelefonico.isNotBlank() && descripcionHechos.isNotBlank(), // Deshabilitado si guarda o campos vacíos
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                if (isSaving) {
+                    CircularProgressIndicator(color = Color.DarkGray, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
         }
+    }
+
+    // --- Diálogo de Error ---
+    saveError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.resetStates() },
+            title = { Text("Error al Enviar Reporte") },
+            text = { Text(message) },
+            confirmButton = {
+                Button(onClick = { viewModel.resetStates() }) {
+                    Text("Aceptar")
+                }
+            }
+        )
     }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ExtorsionPreview() {
-    ExtorsionScreen(
-        onNavigateBack = {},
-        onSave = { _, _, _ -> }
-    )
+    // Para el Preview, se pasa un ViewModel dummy o se usa el constructor por defecto
+    // Nota: La inyección real debe ocurrir en la navegación.
+    ExtorsionScreen(onNavigateBack = {})
 }
-
