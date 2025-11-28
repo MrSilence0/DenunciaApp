@@ -44,6 +44,10 @@ object DenunciaAppViewModelFactory {
     fun createExtorsionViewModelFactory(): ExtorsionViewModelFactory {
         return ExtorsionViewModelFactory(denunciaService, userService)
     }
+
+    fun createRoboCasaViewModelFactory(): RoboCasaViewModelFactory {
+        return RoboCasaViewModelFactory(denunciaService, userService)
+    }
 }
 
 

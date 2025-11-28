@@ -213,11 +213,7 @@ fun AppNavHost(
         }
 
         composable(AppScreen.RoboCasa.route) {
-            RoboCasaScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
-                onSave = { descripcion, ubicacion, telefono, confirmarTelefono, uri ->
-                    navController.popBackStack() // Volver después de guardar
-                }
-            )
+            RoboCasaScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(AppScreen.RoboObjeto.route) {

@@ -26,13 +26,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
 import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
-
-// --- Importaciones de Utilidad Compartidas ---
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory // Importar la factoría central
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RoboCasaViewModel // Importar el ViewModel
 import mx.edu.utng.oic.denunciaapp.ui.utils.MapSelectionDialog
 import mx.edu.utng.oic.denunciaapp.ui.utils.checkLocationPermission
 import mx.edu.utng.oic.denunciaapp.ui.utils.getCurrentLocation
@@ -44,24 +45,24 @@ import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
 @Composable
 fun RoboCasaScreen(
     onNavigateBack: () -> Unit,
-    onSave: (
-        descripcion: String,
-        ubicacion: String,
-        telefono: String,
-        confirmarTelefono: String,
-        imageUri: String?
-    ) -> Unit
+    viewModel: RoboCasaViewModel = viewModel(
+        factory = DenunciaAppViewModelFactory.createRoboCasaViewModelFactory()
+    )
 ) {
     val context = LocalContext.current
-    // Inicialización del cliente de ubicación para obtener GPS
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    // --- Estados del formulario ---
+    // --- Observación de Estados del ViewModel ---
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveError by viewModel.saveError.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+
+    // --- Estados del formulario local ---
     var descripcion by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var confirmarTelefono by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) } // Simulación de URI de imagen
 
     // --- Estado del Mapa y Ubicación ---
     var showMapDialog by remember { mutableStateOf(false) }
@@ -74,6 +75,14 @@ fun RoboCasaScreen(
         mutableStateOf(checkLocationPermission(context))
     }
 
+    // --- Efecto para Navegación en Éxito ---
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            onNavigateBack() // Vuelve a la pantalla anterior al guardar con éxito
+            viewModel.resetStates()
+        }
+    }
+
     // Launcher para solicitar permisos de ubicación
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
@@ -81,11 +90,9 @@ fun RoboCasaScreen(
             hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
-            // Si el permiso fue concedido, intenta obtener la ubicación.
             if (hasLocationPermission) {
                 isLoadingLocation = true
                 getCurrentLocation(context, fusedLocationClient) { latLng ->
-                    // Mueve la cámara al lugar actual después de obtener la ubicación.
                     currentCameraPosition = CameraPosition.fromLatLngZoom(latLng, DefaultZoom)
                     selectedMarkerLocation = latLng
                     ubicacion = getAddressFromLatLng(context, latLng)
@@ -126,13 +133,16 @@ fun RoboCasaScreen(
                     titleContentColor = Color.Black
                 ),
                 actions = {
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(
+                        onClick = onNavigateBack,
+                        enabled = !isSaving
+                    ) {
                         Text("Cancelar", color = RedCancelButton, fontWeight = FontWeight.Bold)
                     }
                 }
             )
         },
-        containerColor = Color.White // Fondo blanco
+        containerColor = Color.White
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -148,7 +158,7 @@ fun RoboCasaScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp) // Altura para el placeholder de imagen
+                    .height(200.dp)
                     .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .border(1.dp, WireframeGray, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
@@ -170,7 +180,7 @@ fun RoboCasaScreen(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Botones para Seleccionar Imagen ---
+            // --- Botones para Seleccionar Imagen (Simulación) ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -180,6 +190,7 @@ fun RoboCasaScreen(
                     onClick = { /* Lógica para abrir la cámara */ },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
+                    enabled = !isSaving,
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp))
@@ -189,9 +200,13 @@ fun RoboCasaScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 // Botón "Galería"
                 Button(
-                    onClick = { /* Lógica para abrir la galería */ },
+                    onClick = {
+                        // Simulación de adjuntar imagen
+                        selectedImageUri = "file://path/to/image.jpg"
+                    },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
+                    enabled = !isSaving,
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp))
@@ -209,6 +224,7 @@ fun RoboCasaScreen(
                 onValueChange = { descripcion = it },
                 placeholder = { Text("Detalle lo sucedido...", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isSaving,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
@@ -230,11 +246,12 @@ fun RoboCasaScreen(
                     modifier = Modifier
                         .weight(1f),
                     readOnly = false,
+                    enabled = !isSaving,
                     trailingIcon = {
                         // Botón para obtener la ubicación actual (GPS)
                         IconButton(onClick = {
                             requestLocationAndUpdate()
-                        }, enabled = !isLoadingLocation) {
+                        }, enabled = !isLoadingLocation && !isSaving) {
                             if (isLoadingLocation) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
@@ -264,6 +281,7 @@ fun RoboCasaScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
+                    enabled = !isSaving,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                 ) {
                     Icon(Icons.Default.LocationOn, contentDescription = "Mapa", tint = Color.White)
@@ -286,13 +304,13 @@ fun RoboCasaScreen(
             OutlinedTextField(
                 value = telefono,
                 onValueChange = {
-                    // Restricción para solo permitir dígitos y una longitud máxima (ej. 10)
                     if (it.length <= 10) {
                         telefono = it.filter { char -> char.isDigit() }
                     }
                 },
                 placeholder = { Text("Número a 10 dígitos", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isSaving,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
@@ -306,13 +324,13 @@ fun RoboCasaScreen(
             OutlinedTextField(
                 value = confirmarTelefono,
                 onValueChange = {
-                    // Restricción para solo permitir dígitos y una longitud máxima (ej. 10)
                     if (it.length <= 10) {
                         confirmarTelefono = it.filter { char -> char.isDigit() }
                     }
                 },
                 placeholder = { Text("Repita el número", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
+                enabled = !isSaving,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
@@ -334,22 +352,28 @@ fun RoboCasaScreen(
             // --- Botón "Guardar" ---
             Button(
                 onClick = {
-                    // TODO: Añadir lógica de validación (ej. campos obligatorios, teléfonos iguales)
-                    onSave(
-                        descripcion,
-                        ubicacion,
-                        telefono,
-                        confirmarTelefono,
-                        selectedImageUri
+                    viewModel.submitDenuncia(
+                        descripcion = descripcion,
+                        locationAddress = ubicacion,
+                        latitud = selectedMarkerLocation?.latitude,
+                        longitud = selectedMarkerLocation?.longitude,
+                        telefono = telefono,
+                        confirmarTelefono = confirmarTelefono
                     )
                 },
+                // Habilitado si no está guardando y los campos obligatorios están llenos
+                enabled = !isSaving && descripcion.isNotBlank() && ubicacion.isNotBlank() && telefono.isNotBlank() && confirmarTelefono.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                if (isSaving) {
+                    CircularProgressIndicator(color = Color.DarkGray, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -364,6 +388,7 @@ fun RoboCasaScreen(
             onDismiss = { showMapDialog = false },
             onLocationConfirmed = { latLng ->
                 selectedMarkerLocation = latLng
+                // Actualiza la ubicación en el TextField
                 ubicacion = getAddressFromLatLng(context, latLng)
                 currentCameraPosition = CameraPosition.fromLatLngZoom(latLng, DefaultZoom)
                 showMapDialog = false
@@ -373,13 +398,25 @@ fun RoboCasaScreen(
             }
         )
     }
+
+    // --- Diálogo de Error ---
+    saveError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.resetStates() },
+            title = { Text("Error al Enviar Reporte") },
+            text = { Text(message) },
+            confirmButton = {
+                Button(onClick = { viewModel.resetStates() }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+    }
 }
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun RoboCasaPreview() {
-    RoboCasaScreen(
-        onNavigateBack = {},
-        onSave = { _, _, _, _, _ -> }
-    )
+    // Se usa el constructor por defecto para el preview
+    RoboCasaScreen(onNavigateBack = {})
 }
