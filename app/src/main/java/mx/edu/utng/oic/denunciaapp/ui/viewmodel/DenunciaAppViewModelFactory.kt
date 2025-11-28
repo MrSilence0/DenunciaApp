@@ -33,11 +33,11 @@ object DenunciaAppViewModelFactory {
      * @return DenunciaFotograficaViewModelFactory
      */
     fun createDenunciaFotograficaViewModelFactory(): DenunciaFotograficaViewModelFactory {
-        // Asumiendo que esta factoría existe y recibe los mismos servicios
-        // return DenunciaFotograficaViewModelFactory(denunciaService, userService)
 
-        // Dado que no tengo la definición de DenunciaFotograficaViewModelFactory,
-        // dejo un placeholder. Si existe, debe usarse.
-        throw NotImplementedError("La factoría de DenunciaFotografica aún no está definida o importada.")
+        return DenunciaFotograficaViewModelFactory(denunciaService, userService)
+    }
+
+    fun createRoboVehiculoViewModelFactory(): RoboVehiculoViewModelFactory {
+        return RoboVehiculoViewModelFactory(denunciaService, userService)
     }
 }

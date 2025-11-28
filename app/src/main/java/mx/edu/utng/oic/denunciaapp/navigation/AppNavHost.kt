@@ -204,12 +204,11 @@ fun AppNavHost(
         }
 
         composable(AppScreen.RoboVehiculo.route) {
-            RoboVehiculoScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
-                onSave = { placas, serie, marca, color, anio, nombre, uri ->
-                    // Aquí iría la lógica para guardar el reporte de vehículo robado
-                    // Por ejemplo: viewModel.saveRoboVehiculo(data)
-                    navController.popBackStack() // Volver después de guardar
-                }
+            RoboVehiculoScreen(
+                // Al ViewModel le pasamos la acción de Volver/Cancelar
+                onNavigateBack = { navController.popBackStack() }
+                // Se elimina onSave = { ... } porque el ViewModel maneja la lógica de guardado
+                // y llama a onNavigateBack cuando la operación tiene éxito.
             )
         }
 
