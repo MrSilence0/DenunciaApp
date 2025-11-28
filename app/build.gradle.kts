@@ -20,8 +20,6 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Usamos manifestPlaceholders para que Gradle inyecte el valor en el Manifest.
-        // La clave se define aquí. Reemplaza con tu clave real.
         manifestPlaceholders["MAPS_API_KEY"] = "AIzaSyCDDrnsnyBme0UcW8Z7G9VKPPdIA9tAcJ4"
     }
 
@@ -70,9 +68,8 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.firestore.ktx.v2514)
+    implementation("com.google.firebase:firebase-auth")
 
-    // === GOOGLE MAPS, UBICACIÓN Y COMPOSE (CORRECCIÓN) ===
-    // ⚠️ NUEVA LÍNEA: La capa de Compose para Maps (obligatoria para los composables)
     implementation("com.google.maps.android:maps-compose:3.1.0")
     implementation(libs.play.services.maps)
     implementation(libs.play.services.location)

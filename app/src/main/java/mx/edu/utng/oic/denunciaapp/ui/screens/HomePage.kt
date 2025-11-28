@@ -78,8 +78,7 @@ fun HomePageScreen(
                 }
             }
         },
-        // CORRECCIÓN CLAVE: SE ELIMINA EL BLOQUE bottomBar
-        // bottomBar = { HomeBottomBar(onNavigateTo) }, // ELIMINADO para evitar duplicación
+
         containerColor = Color.White
     ) { paddingValues ->
         Column(

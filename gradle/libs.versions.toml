@@ -29,8 +29,6 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 # --- Firebase Dependencies ---
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 
-# Firestore dependiente del BOM
-# Usado antes del cambio a usar solo el alias simple
 firebase-firestore-ktx-v2514 = { module = "com.google.firebase:firebase-firestore-ktx", version.ref = "firebaseFirestoreKtxVersion" }
 
 # --- Testing ---

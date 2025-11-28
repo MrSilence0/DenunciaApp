@@ -16,7 +16,7 @@ data class User(
     // CORRECCIÓN: Se elimina la anotación @DocumentId.
     // El ID se leerá como un campo normal dentro del documento, lo cual es compatible
     // con la forma en que tu UserService lo está guardando ("id" to uid).
-    val id: String = UUID.randomUUID().toString(), // Valor por defecto para el ID
+    val idUser: String = UUID.randomUUID().toString(), // Valor por defecto para el ID
 
     val nombre: String = "",
     val correoElectronico: String = "",
