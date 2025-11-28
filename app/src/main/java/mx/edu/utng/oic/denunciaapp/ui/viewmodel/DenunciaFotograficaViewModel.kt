@@ -16,7 +16,6 @@ import mx.edu.utng.oic.denunciaapp.data.repository.DenunciaRepository
 import mx.edu.utng.oic.denunciaapp.data.service.DenunciaService
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
 import android.util.Log
-import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Date
 import java.util.UUID
 
@@ -123,22 +122,5 @@ class DenunciaFotograficaViewModelFactory(
             return DenunciaFotograficaViewModel(denunciaService, userService) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
-
-/**
- * Factory centralizado para inyección de dependencias (Singleton para servicios).
- */
-object DenunciaAppViewModelFactory {
-    // Usar el UserService con Firebase Auth
-    private val userService = UserService()
-
-    private val firestoreInstance = FirebaseFirestore.getInstance()
-    private val denunciaRepository = DenunciaRepository(firestoreInstance)
-    private val denunciaService = DenunciaService(denunciaRepository)
-
-
-    fun createDenunciaFotograficaViewModelFactory(): DenunciaFotograficaViewModelFactory {
-        return DenunciaFotograficaViewModelFactory(denunciaService, userService)
     }
 }

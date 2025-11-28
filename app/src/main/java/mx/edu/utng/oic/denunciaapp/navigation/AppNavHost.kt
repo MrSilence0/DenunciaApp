@@ -196,12 +196,10 @@ fun AppNavHost(
         }
 
         composable(AppScreen.PersonaDesaparecida.route) {
-            PersonaDesaparecidaScreen(onNavigateBack = { navController.popBackStack() }, // Implementa el botón "Volver/Cancelar"
-                onSave = { nombre, sexo, edad, descFisica, vestimenta, detalles, uri ->
-                    // Aquí iría la lógica para guardar la denuncia en el backend o Firestore
-                    // Por ahora, simplemente volvemos a la pantalla anterior.
-                    navController.popBackStack()
-                }
+            PersonaDesaparecidaScreen(
+                onNavigateBack = { navController.popBackStack() } // Implementa el botón "Volver/Cancelar"
+                // NOTA: Se eliminó el parámetro 'onSave' ya que la lógica de guardado
+                // se maneja internamente dentro de PersonaDesaparecidaScreen a través del ViewModel.
             )
         }
 

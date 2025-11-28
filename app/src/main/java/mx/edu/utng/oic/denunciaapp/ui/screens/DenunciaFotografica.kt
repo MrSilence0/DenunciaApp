@@ -382,3 +382,4 @@ fun DenunciaFotograficaPreview() {
         onSuccess = {}
     )
 }
+

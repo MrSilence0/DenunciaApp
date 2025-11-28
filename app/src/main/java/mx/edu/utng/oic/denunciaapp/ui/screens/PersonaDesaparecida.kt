@@ -15,12 +15,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import android.widget.Toast // Para mostrar mensajes de éxito/error
 
 // Importar los componentes comunes y estilos
 import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
@@ -28,8 +31,9 @@ import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
 import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
 
-// --- Colores (Reutilizando los definidos en la pantalla anterior) ---
-
+// 🌟 IMPORTANTE: El objeto DenunciaAppViewModelFactory se importa del archivo centralizado.
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.PersonaDesaparecidaViewModel
 
 // Definición de las opciones de sexo
 enum class Sexo { MUJER, HOMBRE }
@@ -37,16 +41,11 @@ enum class Sexo { MUJER, HOMBRE }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonaDesaparecidaScreen(
-    onNavigateBack: () -> Unit, // Renombrado de 'onCancel' a 'onNavigateBack'
-    onSave: (
-        nombre: String,
-        sexo: Sexo,
-        edad: String,
-        descripcionFisica: String,
-        vestimenta: String,
-        detallesHecho: String,
-        imageUri: String?
-    ) -> Unit
+    onNavigateBack: () -> Unit,
+    // La línea que causaba el error, ahora debe funcionar si la factoría está centralizada.
+    viewModel: PersonaDesaparecidaViewModel = viewModel(
+        factory = DenunciaAppViewModelFactory.createPersonaDesaparecidaViewModelFactory()
+    )
 ) {
     // --- Estados del formulario ---
     var nombre by remember { mutableStateOf("") }
@@ -54,8 +53,30 @@ fun PersonaDesaparecidaScreen(
     var descripcionFisica by remember { mutableStateOf("") }
     var vestimenta by remember { mutableStateOf("") }
     var detallesHecho by remember { mutableStateOf("") }
-    var selectedSexo by remember { mutableStateOf(Sexo.MUJER) } // Default: Mujer
-    var selectedImageUri by remember { mutableStateOf<String?>(null) } // URI de la imagen
+    var selectedSexo by remember { mutableStateOf(Sexo.MUJER) }
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
+
+    // --- Estados del ViewModel ---
+    val isSaving by viewModel.isSaving.collectAsState()
+    val saveError by viewModel.saveError.collectAsState()
+    val saveSuccess by viewModel.saveSuccess.collectAsState()
+    val context = LocalContext.current
+
+    // --- Efecto Secundario para manejar el éxito y error ---
+    LaunchedEffect(saveSuccess) {
+        if (saveSuccess) {
+            Toast.makeText(context, "✅ Reporte enviado con éxito.", Toast.LENGTH_LONG).show()
+            viewModel.resetStates() // Limpiar estados después de la acción
+            onNavigateBack()
+        }
+    }
+
+    LaunchedEffect(saveError) {
+        if (saveError != null) {
+            Toast.makeText(context, "❌ Error al enviar: $saveError", Toast.LENGTH_LONG).show()
+            viewModel.resetStates() // Limpiar solo el error después de mostrarlo
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -66,7 +87,10 @@ fun PersonaDesaparecidaScreen(
                     titleContentColor = Color.Black
                 ),
                 actions = {
-                    TextButton(onClick = onNavigateBack) {
+                    TextButton(
+                        onClick = onNavigateBack,
+                        enabled = !isSaving // Deshabilitar si está guardando
+                    ) {
                         Text("Cancelar", color = RedCancelButton, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -122,7 +146,8 @@ fun PersonaDesaparecidaScreen(
                     onClick = { /* Lógica para abrir la cámara */ },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !isSaving // Deshabilitar si está guardando
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
@@ -134,14 +159,14 @@ fun PersonaDesaparecidaScreen(
                     onClick = { /* Lógica para abrir la galería */ },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
                     shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    enabled = !isSaving // Deshabilitar si está guardando
                 ) {
                     Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Galería")
                 }
             }
-
             Spacer(modifier = Modifier.height(24.dp))
 
             // --- Campo "Nombre" ---
@@ -152,6 +177,7 @@ fun PersonaDesaparecidaScreen(
                 placeholder = { Text("Nombre de la persona desaparecida", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                enabled = !isSaving, // Deshabilitar si está guardando
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
                     unfocusedBorderColor = Color.LightGray
@@ -171,6 +197,7 @@ fun PersonaDesaparecidaScreen(
                     RadioButton(
                         selected = selectedSexo == Sexo.MUJER,
                         onClick = { selectedSexo = Sexo.MUJER },
+                        enabled = !isSaving, // Deshabilitar si está guardando
                         colors = RadioButtonDefaults.colors(selectedColor = Color.Black, unselectedColor = Color.Gray)
                     )
                     Text("Mujer", modifier = Modifier.padding(end = 16.dp))
@@ -180,6 +207,7 @@ fun PersonaDesaparecidaScreen(
                     RadioButton(
                         selected = selectedSexo == Sexo.HOMBRE,
                         onClick = { selectedSexo = Sexo.HOMBRE },
+                        enabled = !isSaving, // Deshabilitar si está guardando
                         colors = RadioButtonDefaults.colors(selectedColor = Color.Black, unselectedColor = Color.Gray)
                     )
                     Text("Hombre")
@@ -191,10 +219,11 @@ fun PersonaDesaparecidaScreen(
             LabelText("Edad (aproximada)")
             OutlinedTextField(
                 value = edad,
-                onValueChange = { edad = it },
+                onValueChange = { edad = if (it.length <= 3) it else it.substring(0, 3) }, // Limitar a 3 dígitos
                 placeholder = { Text("Ej: 35", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                enabled = !isSaving, // Deshabilitar si está guardando
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
                     unfocusedBorderColor = Color.LightGray
@@ -210,6 +239,7 @@ fun PersonaDesaparecidaScreen(
                 placeholder = { Text("Altura, color de ojos/cabello, señas particulares", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                enabled = !isSaving, // Deshabilitar si está guardando
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
                     unfocusedBorderColor = Color.LightGray
@@ -225,6 +255,7 @@ fun PersonaDesaparecidaScreen(
                 placeholder = { Text("Color y tipo de ropa, calzado", color = WireframeGray) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                enabled = !isSaving, // Deshabilitar si está guardando
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
                     unfocusedBorderColor = Color.LightGray
@@ -243,6 +274,7 @@ fun PersonaDesaparecidaScreen(
                     .heightIn(min = 100.dp),
                 maxLines = 5,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                enabled = !isSaving, // Deshabilitar si está guardando
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = WireframeGray,
                     unfocusedBorderColor = Color.LightGray
@@ -255,7 +287,9 @@ fun PersonaDesaparecidaScreen(
                 text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum",
                 fontSize = 12.sp,
                 color = Color.Gray,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -263,23 +297,31 @@ fun PersonaDesaparecidaScreen(
             // --- Botón "Guardar" ---
             Button(
                 onClick = {
-                    onSave(
-                        nombre,
-                        selectedSexo,
-                        edad,
-                        descripcionFisica,
-                        vestimenta,
-                        detallesHecho,
-                        selectedImageUri
+                    // Llamar al método del ViewModel para guardar
+                    viewModel.submitDenuncia(
+                        nombre = nombre,
+                        sexo = selectedSexo,
+                        edad = edad,
+                        descripcionFisica = descripcionFisica,
+                        vestimenta = vestimenta,
+                        detallesHecho = detallesHecho
                     )
                 },
+                enabled = !isSaving && nombre.isNotBlank() && edad.isNotBlank() && detallesHecho.isNotBlank(), // Deshabilitar si está guardando o si los campos obligatorios están vacíos
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        color = Color.DarkGray,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -290,9 +332,11 @@ fun PersonaDesaparecidaScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun PersonaDesaparecidaPreview() {
+    // Usamos la factoría centralizada para el preview
     PersonaDesaparecidaScreen(
         onNavigateBack = {},
-        onSave = { _, _, _, _, _, _, _ -> }
+        viewModel = viewModel(
+            factory = DenunciaAppViewModelFactory.createPersonaDesaparecidaViewModelFactory()
+        )
     )
 }
-
