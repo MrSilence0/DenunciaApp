@@ -20,7 +20,8 @@ navigationRuntimeKtx = "2.9.6"
 navigationCompose = "2.9.6"
 firebaseFirestoreKtxVersion = "25.1.4"
 firebaseAuthKtx = "24.0.1"
-firebaseCrashlyticsBuildtools = "3.0.6" # Versión de Firestore antes de la unificación total
+firebaseCrashlyticsBuildtools = "3.0.6"
+roomKtx = "2.8.4" # Versión de Firestore antes de la unificación total
 
 [libraries]
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
@@ -57,6 +58,7 @@ play-services-location = { module = "com.google.android.gms:play-services-locati
 play-services-maps = { module = "com.google.android.gms:play-services-maps", version.ref = "playServicesMaps" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
 firebase-crashlytics-buildtools = { group = "com.google.firebase", name = "firebase-crashlytics-buildtools", version.ref = "firebaseCrashlyticsBuildtools" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 
 
 [plugins]

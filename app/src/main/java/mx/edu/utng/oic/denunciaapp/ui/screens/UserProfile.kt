@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,11 +19,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import mx.edu.utng.oic.denunciaapp.data.model.User
+import mx.edu.utng.oic.denunciaapp.data.service.UserService // Necesario para la Factory
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.UserProfileViewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.UserProfileViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -45,56 +49,91 @@ val StarGray = Color(0xFFE0E0E0)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
-    onNavigateBack: () -> Unit // Se usa para salir, volver, o hacer logout.
+    onNavigateBack: () -> Unit // Se usa para salir o volver.
 ) {
-    // --- Estados del Perfil ---
-    var name by remember { mutableStateOf("User name") }
-    var selectedGender by remember { mutableStateOf("Hombre") }
-    var phone by remember { mutableStateOf("") }
-    var birthDate by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("Inserte una descripción") }
-    var respectScore by remember { mutableStateOf(3) } // 3 estrellas de 5
+    // --- 1. Inicializar ViewModel y Factory ---
+    val userService = remember { UserService() }
+    val factory = remember { UserProfileViewModelFactory(userService) }
+    val viewModel: UserProfileViewModel = viewModel(factory = factory)
 
-    // --- Estados de Lógica de UI ---
+    // --- 2. Observar Estados del ViewModel ---
+    val user: User = viewModel.userState
+    val isLoading = viewModel.isLoading
+    val isSaving = viewModel.isSaving
+    val feedbackMessage = viewModel.feedbackMessage
+
+    // --- 3. Estados de Lógica de UI ---
     var showPhotoDialog by remember { mutableStateOf(false) }
     var showLocationDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-
-    // Estado para el selector de fecha
     val datePickerState = rememberDatePickerState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+
+    // --- 4. Manejo de Mensajes (Snackbar) ---
+    LaunchedEffect(feedbackMessage) {
+        if (feedbackMessage != null) {
+            scope.launch {
+                snackbarHostState.showSnackbar(feedbackMessage)
+            }
+            viewModel.clearFeedbackMessage()
+        }
+    }
 
 
     // --- Contenido Principal ---
     Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
-            // Barra superior simple para el botón de logout (flecha)
+            // Encabezado con Logout/Guardar y la Imagen
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(HeaderBlue)
-                    .height(200.dp) // Altura del encabezado azul
+                    .height(200.dp)
             ) {
-                // Botón de Logout (Flecha blanca grande)
-                Icon(
-                    imageVector = Icons.Default.ArrowForward,
-                    contentDescription = "Logout/Volver",
-                    tint = Color.White,
+                // Botón de Logout
+                Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(24.dp)
-                        .size(32.dp)
-                        .clickable(onClick = onNavigateBack) // Usar onNavigateBack para salir
-                )
+                        .padding(24.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Botón de GUARDAR (Si no queremos un botón de guardar explícito)
+                    if (!user.isAnonymus && !isLoading) {
+                        TextButton(
+                            onClick = viewModel::saveUserProfile,
+                            enabled = !isSaving
+                        ) {
+                            Text(
+                                text = if (isSaving) "Guardando..." else "Guardar",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Botón de Logout (Flecha)
+                    Icon(
+                        imageVector = Icons.Default.Logout,
+                        contentDescription = "Logout",
+                        tint = Color.White,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .padding(start = 8.dp)
+                            .clickable { viewModel.logoutUser(onNavigateBack) }
+                    )
+                }
 
                 // Placeholder de la Imagen de Perfil
                 Box(
                     modifier = Modifier
                         .size(100.dp)
                         .align(Alignment.BottomCenter)
-                        .offset(y = (50).dp) // La mitad del tamaño para que quede centrado en el corte
-                        .clickable { showPhotoDialog = true } // Abre el diálogo al hacer clic
+                        .offset(y = (50).dp)
+                        .clickable { showPhotoDialog = true }
                 ) {
                     ImagePlaceholder(
                         size = 100.dp,
@@ -103,7 +142,6 @@ fun UserProfileScreen(
                         borderColor = HeaderBlue,
                         borderWidth = 3.dp
                     )
-                    // Icono de persona dentro del placeholder
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Foto de perfil",
@@ -117,6 +155,15 @@ fun UserProfileScreen(
         },
         containerColor = Color.White
     ) { paddingValues ->
+
+        if (isLoading) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) { CircularProgressIndicator() }
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -125,13 +172,17 @@ fun UserProfileScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(60.dp)) // Espacio para la imagen que se superpone
+            Spacer(modifier = Modifier.height(60.dp))
 
-            // --- Columna 1: Información Personal (Izquierda del Wireframe) ---
+            // --- Columna 1: Información Personal ---
             Column(horizontalAlignment = Alignment.Start) {
                 // Nombre
                 LabelText("Nombre")
-                SimpleOutlinedTextField(value = name, onValueChange = { name = it }, placeholder = "User name")
+                SimpleOutlinedTextField(
+                    value = user.nombre,
+                    onValueChange = { viewModel.onUserFieldChange(user.copy(nombre = it)) },
+                    placeholder = "User name"
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -140,11 +191,11 @@ fun UserProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    GenderOption("Hombre", selectedGender) { selectedGender = "Hombre" }
+                    GenderOption("Hombre", user.sexo) { viewModel.onUserFieldChange(user.copy(sexo = "Hombre")) }
                     Spacer(modifier = Modifier.width(16.dp))
-                    GenderOption("Mujer", selectedGender) { selectedGender = "Mujer" }
+                    GenderOption("Mujer", user.sexo) { viewModel.onUserFieldChange(user.copy(sexo = "Mujer")) }
                     Spacer(modifier = Modifier.width(16.dp))
-                    GenderOption("Otro", selectedGender) { selectedGender = "Otro" }
+                    GenderOption("Otro", user.sexo) { viewModel.onUserFieldChange(user.copy(sexo = "Otro")) }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -152,8 +203,8 @@ fun UserProfileScreen(
                 // Teléfono
                 LabelText("Teléfono")
                 SimpleOutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it },
+                    value = user.telefono,
+                    onValueChange = { viewModel.onUserFieldChange(user.copy(telefono = it)) },
                     placeholder = "",
                     keyboardType = KeyboardType.Phone
                 )
@@ -163,7 +214,7 @@ fun UserProfileScreen(
                 // Fecha de Nacimiento (con DatePicker)
                 LabelText("Fecha de nacimiento")
                 OutlinedTextFieldWithDialog(
-                    value = birthDate,
+                    value = user.fechaNacimiento,
                     placeholder = "",
                     onClick = { showDatePicker = true }
                 )
@@ -173,27 +224,27 @@ fun UserProfileScreen(
                 // Correo electrónico
                 LabelText("Correo electrónico")
                 SimpleOutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
+                    value = user.correoElectronico,
+                    onValueChange = { viewModel.onUserFieldChange(user.copy(correoElectronico = it)) },
                     placeholder = "",
-                    keyboardType = KeyboardType.Email
+                    keyboardType = KeyboardType.Email,
+                    // Si el usuario no es anónimo, el email no debería ser editable
+                    enabled = user.isAnonymus
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Dirección (con botón de Mapa)
+                // Dirección
                 LabelText("Dirección")
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Campo de texto para la dirección
                     SimpleOutlinedTextField(
-                        value = address,
-                        onValueChange = { address = it },
+                        value = user.descripcion, // Usando descripción como dirección temporal
+                        onValueChange = { viewModel.onUserFieldChange(user.copy(descripcion = it)) },
                         placeholder = "",
                         modifier = Modifier.weight(1f),
-                        // Al hacer clic, se simula que se activa la ubicación
                         interactionSource = remember { MutableInteractionSource() }
                             .also { interactionSource ->
                                 LaunchedEffect(interactionSource) {
@@ -208,17 +259,8 @@ fun UserProfileScreen(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Botón para Maps (Icono de ubicación)
                     IconButton(
-                        // NOTA: Se asume que este botón debería navegar a un mapa externo o a otra ruta.
-                        // Como no tenemos el callback original, usamos una simulación o un popBackStack.
-                        // Para evitar errores de compilación, si la navegación a mapa no está definida,
-                        // simplemente se omite o se usa un placeholder de click.
-                        onClick = {
-                            // Aquí debería ir onNavigateToMap() si estuviera en la firma,
-                            // o una llamada al NavController.
-                            showLocationDialog = true // Simular la interacción de ubicación.
-                        },
+                        onClick = { showLocationDialog = true },
                         modifier = Modifier
                             .size(56.dp)
                             .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
@@ -231,13 +273,13 @@ fun UserProfileScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Columna 2: Descripción y Puntos de Respeto (Derecha del Wireframe) ---
+            // --- Columna 2: Descripción y Puntos de Respeto ---
             Column(horizontalAlignment = Alignment.Start) {
-                // Descripción
+                // Descripción (Si no se usa para dirección, usar un nuevo campo de User)
                 LabelText("Descripción")
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = user.descripcion, // Si usaste descripción arriba, cambia este
+                    onValueChange = { viewModel.onUserFieldChange(user.copy(descripcion = it)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 100.dp),
@@ -258,14 +300,14 @@ fun UserProfileScreen(
                     horizontalArrangement = Arrangement.Start
                 ) {
                     repeat(5) { index ->
-                        val isFilled = index < respectScore
+                        val isFilled = index < user.respectPoints
                         Icon(
                             imageVector = if (isFilled) Icons.Default.Star else Icons.Outlined.StarBorder,
                             contentDescription = "Estrella de respeto",
                             tint = if (isFilled) StarYellow else StarGray,
                             modifier = Modifier
                                 .size(36.dp)
-                                .clickable { respectScore = index + 1 } // Permite cambiar la puntuación
+                            // La puntuación es solo visual, no se permite cambiar en este VM por simplicidad
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -277,11 +319,11 @@ fun UserProfileScreen(
 
     // --- Diálogos y Pop-ups ---
 
-    // 1. Diálogo de Selección de Foto
+    // 1. Diálogo de Selección de Foto (Sin cambios)
     if (showPhotoDialog) {
         AlertDialog(
             onDismissRequest = { showPhotoDialog = false },
-            title = { Text("Name", fontWeight = FontWeight.Bold) },
+            title = { Text(user.nombre, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
                     Row(
@@ -309,20 +351,19 @@ fun UserProfileScreen(
                     }
                 }
             },
-            confirmButton = {} // Se usan las opciones del texto, no un botón de Confirmar
+            confirmButton = {}
         )
     }
 
-    // 2. Diálogo de Ubicación (Simulación)
+    // 2. Diálogo de Ubicación (Simulación, sin cambios)
     if (showLocationDialog) {
         AlertDialog(
             onDismissRequest = { showLocationDialog = false },
-            title = { Text("Message Title", fontWeight = FontWeight.Bold) },
+            title = { Text("Ubicación", fontWeight = FontWeight.Bold) },
             text = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Activar su ubicación")
                     Spacer(modifier = Modifier.weight(1f))
-                    // Icono de Círculo (Placeholder para Switch o Checkbox)
                     Box(
                         modifier = Modifier
                             .size(24.dp)
@@ -338,7 +379,7 @@ fun UserProfileScreen(
         )
     }
 
-    // 3. Lógica del Pop-up de Calendario (Reutilizado de RegisterScreen)
+    // 3. Lógica del Pop-up de Calendario
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -346,7 +387,8 @@ fun UserProfileScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                        birthDate = formatter.format(Date(millis))
+                        val newDate = formatter.format(Date(millis))
+                        viewModel.onUserFieldChange(user.copy(fechaNacimiento = newDate))
                     }
                     showDatePicker = false
                 }) {
@@ -372,4 +414,3 @@ fun UserProfileScreenPreview() {
         onNavigateBack = {}
     )
 }
-

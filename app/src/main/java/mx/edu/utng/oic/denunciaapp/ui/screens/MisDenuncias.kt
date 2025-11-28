@@ -1,23 +1,19 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
 // ------------------------------------------------------------------
-// IMPORTACIONES CLAVE (YA NO NECESITAMOS 'getValue' o 'setValue' con esta implementación)
+// IMPORTS
 // ------------------------------------------------------------------
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
-
-// IMPORTACIONES DE DOMINIO Y VIEWMODEL
+import com.google.firebase.firestore.FirebaseFirestore
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MisDenunciasViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MisDenunciasViewModelFactory
+import mx.edu.utng.oic.denunciaapp.data.model.* // Importamos todo el modelo para Denuncia
 import mx.edu.utng.oic.denunciaapp.data.model.Denuncia as DomainDenuncia
-import mx.edu.utng.oic.denunciaapp.data.model.TipoIncidente
 import java.text.SimpleDateFormat
 
-// ------------------------------------------------------------------
-// OTRAS IMPORTACIONES
-// ------------------------------------------------------------------
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -36,20 +32,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextOverflow // Importación necesaria
 
 
-// --- 2. MODELO DE DATOS PARA LA DENUNCIA (Modelo de la UI) ---
+// ==================================================================
+// 1. DATA CLASS PARA UI (ACTUALIZADA)
+// ==================================================================
 data class UIDenuncia(
     val id: String,
     val tipo: String,
     val estatus: String,
     val fecha: String,
     val hora: String,
-    val detalle: String = "Detalle breve de la denuncia."
+    val detallesAdicionales: List<Pair<String, String>> // Lista de pares (Etiqueta, Valor)
 )
 
 
-// --- 3. FUNCIÓN DE MAPEO DE DOMINIO A UI ---
+// ==================================================================
+// 2. MAPEO Domain → UI (ACTUALIZADO)
+// ==================================================================
 fun DomainDenuncia.toUiDenuncia(): UIDenuncia {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy")
     val timeFormat = SimpleDateFormat("HH:mm")
@@ -64,93 +65,185 @@ fun DomainDenuncia.toUiDenuncia(): UIDenuncia {
         TipoIncidente.DENUNCIA_VIOLENCIA -> "Denuncia de Violencia"
     }
 
+    // Mapeo de detalles específicos según el tipo de Denuncia
+    val detalles = when (this) {
+        is DenunciaFotografica -> listOf(
+            "Descripción" to this.descripcion,
+            "Dirección" to (this.locationAddress ?: "N/A")
+        )
+        is PersonaDesaparecida -> listOf(
+            "Nombre" to this.nombreDesaparecido,
+            "Sexo" to this.sexo,
+            "Edad" to this.edad.toString(),
+            "Descripción Física" to this.descripcionFisica
+        )
+        is RoboVehiculo -> listOf(
+            "Placas" to this.placas,
+            "Marca/Color" to "${this.marca}/${this.color}",
+            "Año" to this.anio.toString(),
+            "Reportante" to this.nombreReportante
+        )
+        is Extorsion -> listOf(
+            "Teléfono" to this.numeroTelefonico,
+            "Descripción" to this.descripcion
+        )
+        is RoboCasa -> listOf(
+            "Descripción" to this.descripcion,
+            "Dirección" to (this.locationAddress ?: "N/A"),
+            "Contacto" to this.telefonoContacto
+        )
+        is RoboObjeto -> listOf(
+            "Objeto" to this.tipoObjeto,
+            "Marca/Color" to "${this.marca}/${this.color}",
+            "Estado" to this.estado,
+            "Dirección" to (this.locationAddress ?: "N/A")
+        )
+        is DenunciaViolencia -> listOf(
+            "Conducta" to this.tipoConducta,
+            "Descripción" to this.descripcion,
+            "Contacto" to this.telefonoContacto,
+            "Dirección" to (this.locationAddress ?: "N/A")
+        )
+        else -> emptyList()
+    }
+
+
     return UIDenuncia(
         id = this.id,
         tipo = tipoString,
-        estatus = "En Revisión",
+        estatus = "En Revisión", // Asumiendo estatus fijo por ahora
         fecha = dateFormat.format(this.creationDate),
-        hora = timeFormat.format(this.creationDate)
+        hora = timeFormat.format(this.creationDate),
+        detallesAdicionales = detalles // Añadimos los detalles
     )
 }
 
 
-// --- 4. COMPONENTE INDIVIDUAL DE ITEM DE DENUNCIA ---
+// ==================================================================
+// 3. ITEM INDIVIDUAL (ACTUALIZADO PARA MOSTRAR TODOS LOS DETALLES)
+// ==================================================================
 @Composable
-fun DenunciaItem(denuncia: UIDenuncia, onClick: (String) -> Unit) {
+fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 8.dp)
-            .clickable { onClick(denuncia.id) },
+            .padding(vertical = 4.dp, horizontal = 8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Fila principal: Tipo de Denuncia y Estatus
+
+            // TIPO + ESTATUS
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Tipo de Denuncia
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Warning,
-                        contentDescription = "Tipo de Denuncia",
-                        tint = PrimaryColor,
-                        modifier = Modifier.size(24.dp).padding(end = 4.dp)
+                        contentDescription = "Tipo",
+                        tint = Color(0xFF0086FF),
+                        modifier = Modifier.size(24.dp)
                     )
+                    Spacer(Modifier.width(6.dp))
+
                     Text(
                         text = denuncia.tipo,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        fontWeight = FontWeight.Bold
                     )
                 }
 
-                // Estatus (etiqueta con color)
                 val statusColor = when (denuncia.estatus) {
                     "Resuelta" -> Color(0xFF4CAF50)
                     "En Revisión" -> Color(0xFFFF9800)
                     "Rechazada" -> Color(0xFFF44336)
-                    else -> WireframeGray
+                    else -> Color.Gray
                 }
+
                 Text(
                     text = denuncia.estatus,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = statusColor,
                     modifier = Modifier
-                        .background(statusColor.copy(alpha = 0.15f), shape = MaterialTheme.shapes.small)
+                        .background(statusColor.copy(0.15f), MaterialTheme.shapes.small)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Divider(color = WireframeGray.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // Fila de detalles: ID, Fecha y Hora
+            Spacer(Modifier.height(10.dp))
+            Divider()
+            Spacer(Modifier.height(10.dp))
+
+            // DETALLES ADICIONALES (NUEVA SECCIÓN)
+            Text("Detalles:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+
+            denuncia.detallesAdicionales.forEach { (label, value) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "$label:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color.Gray,
+                        modifier = Modifier.weight(0.4f)
+                    )
+                    Text(
+                        text = value,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(0.6f)
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+            Divider()
+            Spacer(Modifier.height(10.dp))
+
+
+            // FECHA + HORA + ID (Estructura de la corrección anterior)
+
+            // ID
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text("ID:", fontSize = 10.sp, color = Color.Gray)
+                Text(
+                    text = denuncia.id,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            // Fecha y Hora
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // ID de la Denuncia
-                Column {
-                    Text("ID:", fontSize = 10.sp, color = WireframeGray)
-                    Text(denuncia.id, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+
+                // Columna para la Fecha
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Fecha:", fontSize = 10.sp, color = Color.Gray)
+                    Text(denuncia.fecha, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
 
-                // Fecha
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("Fecha:", fontSize = 10.sp, color = WireframeGray)
-                    Text(denuncia.fecha, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Black)
-                }
-
-                // Hora
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("Hora:", fontSize = 10.sp, color = WireframeGray)
-                    Text(denuncia.hora, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+                // Columna para la Hora
+                Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                    Text("Hora:", fontSize = 10.sp, color = Color.Gray)
+                    Text(denuncia.hora, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -158,18 +251,26 @@ fun DenunciaItem(denuncia: UIDenuncia, onClick: (String) -> Unit) {
 }
 
 
-// ------------------------------------------------------------------
-// 5. PANTALLA COMPLETA MIS DENUNCIAS (ESTADO Y VIEWMODEL)
-// ------------------------------------------------------------------
+// ==================================================================
+// 4. PANTALLA COMPLETA - CORREGIDA
+// ==================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisDenunciasScreen(
     onNavigateBack: () -> Unit,
     onOpenDrawer: () -> Unit,
-    onNavigateToDenunciaDetail: (String) -> Unit,
-    viewModel: MisDenunciasViewModel = viewModel(factory = MisDenunciasViewModelFactory())
+    onNavigateToDenunciaDetail: (String) -> Unit, // Ya no se usa, pero se mantiene el parámetro
 ) {
-    // 🔥 CORRECCIÓN: Acceso directo al valor del State
+    // 1. Obtener la instancia de FirebaseFirestore (estable)
+    val firestore = remember { FirebaseFirestore.getInstance() }
+
+    // 2. Crear la factoría con la dependencia de Firestore (estable)
+    val factory = remember { MisDenunciasViewModelFactory(firestore = firestore) }
+
+    // 3. Obtener el ViewModel usando la factoría
+    val viewModel: MisDenunciasViewModel = viewModel(factory = factory)
+
+    // Obtener los estados del ViewModel
     val denuncias = viewModel.denuncias.value
     val isLoading = viewModel.isLoading.value
     val feedbackMessage = viewModel.feedbackMessage.value
@@ -177,83 +278,75 @@ fun MisDenunciasScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    // Mostrar mensajes
     LaunchedEffect(feedbackMessage) {
         if (feedbackMessage != null) {
             scope.launch {
                 snackbarHostState.showSnackbar(feedbackMessage)
-                viewModel.clearFeedbackMessage()
             }
+            viewModel.clearFeedbackMessage()
         }
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+
         topBar = {
             TopAppBar(
                 title = { Text("Mis Denuncias", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Regresar a Denuncias"
-                        )
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                }
             )
         },
+
         containerColor = Color(0xFFF5F5F5)
+
     ) { paddingValues ->
 
-        // Indicador de carga
         if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator(color = PrimaryColor)
-            }
-        } else if (denuncias.isEmpty()) {
-            // Mensaje de lista vacía
+            ) { CircularProgressIndicator() }
+            return@Scaffold
+        }
+
+        if (denuncias.isEmpty()) {
             Box(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    "Aún no has realizado ninguna denuncia.",
-                    fontSize = 16.sp,
-                    color = WireframeGray
-                )
+                val displayMessage = feedbackMessage ?: "Aún no has realizado ninguna denuncia."
+                Text(displayMessage, color = Color.Gray)
             }
-        } else {
-            // Lista de denuncias reales
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(top = 8.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                items(denuncias) { denuncia: DomainDenuncia ->
+            return@Scaffold
+        }
 
-                    val uiDenuncia = denuncia.toUiDenuncia()
+        // LISTA DE DENUNCIAS
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
 
-                    DenunciaItem(
-                        denuncia = uiDenuncia,
-                        onClick = { denunciaId ->
-                            onNavigateToDenunciaDetail(denunciaId)
-                        }
-                    )
-                }
+            items(denuncias) { domainDenuncia ->
+
+                val uiDenuncia = domainDenuncia.toUiDenuncia()
+
+                // Llamamos a DenunciaItem sin la función onClick
+                DenunciaItem(denuncia = uiDenuncia)
             }
         }
     }
 }
 
 
-// ------------------------------------------------------------------
-// 6. PREVIEW CORREGIDO (ENVUELTO EN MATERIALTHEME)
-// ------------------------------------------------------------------
+// ==================================================================
+// 5. PREVIEW (Sin cambios)
+// ==================================================================
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MisDenunciasScreenPreview() {

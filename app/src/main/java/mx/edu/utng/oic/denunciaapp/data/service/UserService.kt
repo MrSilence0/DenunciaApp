@@ -10,9 +10,6 @@ class UserService {
     private val auth = FirebaseAuth.getInstance()
     private val usersCollection = FirebaseFirestore.getInstance().collection("users")
 
-    /**
-     * Obtener UID actual o generar uno anónimo
-     */
     suspend fun getOrCreateUserId(): String {
         val current = auth.currentUser
         if (current != null) return current.uid
@@ -21,10 +18,6 @@ class UserService {
         return result.user?.uid ?: throw Exception("Error creando usuario anónimo")
     }
 
-    /**
-     * 🔥 Necesaria para RegisterViewModel
-     * Busca un usuario por correo en Firestore
-     */
     suspend fun getUserByEmail(email: String): User? {
         val query = usersCollection.whereEqualTo("correoElectronico", email)
             .limit(1)
@@ -39,10 +32,6 @@ class UserService {
         return user?.copy(idUser = uid)
     }
 
-    /**
-     * 🔥 Nueva función: Registrar usuario usando un objeto User
-     * Esta es la que RegisterViewModel NECESITA.
-     */
     suspend fun registerUser(user: User) {
         // 1) Crear usuario en FirebaseAuth
         val authResult = auth.createUserWithEmailAndPassword(
@@ -60,9 +49,6 @@ class UserService {
             .await()
     }
 
-    /**
-     * Login normal
-     */
     suspend fun loginUser(email: String, password: String): User? {
 
         val result = auth.signInWithEmailAndPassword(email, password).await()
@@ -78,11 +64,22 @@ class UserService {
         auth.signOut()
     }
 
-    /**
-     * Login anónimo
-     */
     suspend fun signInAnonymously(): String {
         val result = auth.signInAnonymously().await()
         return result.user?.uid ?: throw Exception("No UID returned")
     }
+
+    suspend fun updateUser(user: User) {
+        // Solo actualiza los datos del usuario en Firestore
+        usersCollection.document(user.idUser)
+            .set(user)
+            .await()
+    }
+
+    suspend fun getUserById(uid: String): User? {
+        val snapshot = usersCollection.document(uid).get().await()
+        return snapshot.toObject(User::class.java)?.copy(idUser = uid)
+    }
+
 }
+

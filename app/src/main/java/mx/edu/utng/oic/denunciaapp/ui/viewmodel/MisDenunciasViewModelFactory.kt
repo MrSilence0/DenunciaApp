@@ -5,17 +5,39 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.firestore.FirebaseFirestore
 import mx.edu.utng.oic.denunciaapp.data.repository.DenunciaRepository
 import mx.edu.utng.oic.denunciaapp.data.service.DenunciaService
-import mx.edu.utng.oic.denunciaapp.data.service.UserService
+import mx.edu.utng.oic.denunciaapp.data.service.UserService // Importar el servicio de usuario
 
-class MisDenunciasViewModelFactory : ViewModelProvider.Factory {
+/**
+ * Fábrica personalizada para instanciar MisDenunciasViewModel.
+ *
+ * Esta clase se encarga de crear las dependencias (Repository, Services)
+ * y pasarlas al constructor del ViewModel.
+ */
+class MisDenunciasViewModelFactory(
+    // Las dependencias necesarias para crear el grafo de objetos
+    private val firestore: FirebaseFirestore
+) : ViewModelProvider.Factory {
+
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        // Crear la instancia de Firestore y pasarla al repositorio
-        val firestore = FirebaseFirestore.getInstance()
-        val denunciaRepository = DenunciaRepository(firestore)
-        val denunciaService = DenunciaService(denunciaRepository)
-        val userService = UserService()
+        if (modelClass.isAssignableFrom(MisDenunciasViewModel::class.java)) {
 
-        @Suppress("UNCHECKED_CAST")
-        return MisDenunciasViewModel(denunciaService, userService) as T
+            // 1. Crear la instancia de UserService
+            // El UserService ya maneja la autenticación y la colección 'users'.
+            val userService = UserService()
+
+            // 2. Crear la instancia de DenunciaRepository (necesita Firestore)
+            val denunciaRepository = DenunciaRepository(firestore)
+
+            // 3. Crear la instancia de DenunciaService (necesita el Repository)
+            val denunciaService = DenunciaService(denunciaRepository)
+
+            // 4. Crear el MisDenunciasViewModel con los servicios
+            @Suppress("UNCHECKED_CAST")
+            return MisDenunciasViewModel(
+                denunciaService = denunciaService,
+                userService = userService
+            ) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

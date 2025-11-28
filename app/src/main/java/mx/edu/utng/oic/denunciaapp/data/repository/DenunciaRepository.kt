@@ -1,3 +1,5 @@
+// DenunciaRepository.kt
+
 package mx.edu.utng.oic.denunciaapp.data.repository
 
 import android.util.Log
@@ -17,26 +19,21 @@ class DenunciaRepository(
 
     /**
      * Guarda SIEMPRE usando el ID del objeto Denuncia.
-     * Esto asegura que se guarden correctamente los campos heredados
-     * como idUser, creationDate, etc.
      */
     suspend fun addDenuncia(denuncia: Denuncia): Boolean {
         return try {
-            val collection = firestore.collection(COLLECTION_NAME)
+            firestore.collection(COLLECTION_NAME)
+                .document(denuncia.id)
+                .set(denuncia)
+                .await()
 
-            // Usa SIEMPRE el ID del objeto
-            collection.document(denuncia.id).set(denuncia).await()
-
-            Log.i("DenunciaRepository", "Denuncia guardada con ID: ${denuncia.id}")
+            Log.i("DenunciaRepository", "Denuncia guardada con ID correcto: ${denuncia.id}")
 
             true
         } catch (e: Exception) {
-            Log.e(
-                "DenunciaRepository",
-                "Error al guardar denuncia: ${e.message}",
-                e
-            )
-            throw e
+            Log.e("DenunciaRepository", "ERROR al guardar denuncia: ${e.message}", e)
+            false
         }
     }
+
 }
