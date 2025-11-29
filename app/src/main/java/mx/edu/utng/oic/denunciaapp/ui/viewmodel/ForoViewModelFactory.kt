@@ -21,3 +21,4 @@ class ForoViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

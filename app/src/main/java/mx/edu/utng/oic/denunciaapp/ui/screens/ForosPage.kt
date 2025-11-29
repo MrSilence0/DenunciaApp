@@ -1,20 +1,15 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Forum
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,41 +19,62 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import mx.edu.utng.oic.denunciaapp.navigation.AppScreen // Importación corregida a .ui.navigation
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.launch
+import mx.edu.utng.oic.denunciaapp.data.model.Foro as ForoModel
+import mx.edu.utng.oic.denunciaapp.data.service.ForoService
+import mx.edu.utng.oic.denunciaapp.data.service.UserService
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.ForoViewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.ForoViewModelFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-// --- Colores y Constantes ---
+// --- Definiciones de Colores (Añadidos para completar el código) ---
 val FABColor = Color(0xFFFFC107) // Amarillo para el FAB
 val CardBackground = Color(0xFFF0F0F0) // Fondo de tarjeta
-
-// Modelo de datos para simular un foro
-data class Foro(
-    val id: Int,
-    val titulo: String,
-    val participantes: Int,
-    val ultimaActividad: String,
-    val responseCount: Int, // Añadido para el contador de respuestas
-    val url: String = "https://example.com/foro/$id"
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForosPageScreen(
-    // Parámetro de navegación específico para crear foro
     onNavigateToCreateForum: () -> Unit,
-    // Parámetro general para navegar a los detalles del foro (Messages.kt)
     onNavigateTo: (String) -> Unit
 ) {
-    // Datos de ejemplo para la lista de foros
-    val forosList = listOf(
-        Foro(1, "Soporte legal para violencia doméstica", 125, "Hace 2 horas", 5),
-        Foro(2, "Cómo tramitar un acta de denuncia", 42, "Ayer", 18),
-        Foro(3, "Me robaron el coche, ¿qué hago?", 88, "23/11/2025", 73),
-        Foro(4, "Ayuda psicológica y líneas de apoyo", 301, "Hace 10 minutos", 301),
-        Foro(5, "Temas de seguridad pública en mi colonia", 67, "1 semana", 1),
-        Foro(6, "Experiencias con el 911", 15, "01/10/2025", 0),
-    )
+    // --- 1. Inicializar ViewModel y Observar Estados ---
+    // NOTA: En una app real, los servicios se inyectarían. Usamos remember para simular el singleton
+    val foroService = remember { ForoService() }
+    val userService = remember { UserService() }
+    val factory = remember { ForoViewModelFactory(foroService, userService) }
+    val viewModel: ForoViewModel = viewModel(factory = factory)
+
+    val forosList by viewModel.foros.collectAsState()
+    val currentUserId by viewModel.currentUserId.collectAsState()
+    val isLoading by viewModel.isLoadingForos.collectAsState()
+    val operationError by viewModel.operationError.collectAsState()
+    val isDeleting by viewModel.isProcessing.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    // 2. Manejar mensajes de error
+    LaunchedEffect(operationError) {
+        operationError?.let { errorMsg ->
+            scope.launch {
+                snackbarHostState.showSnackbar(errorMsg, duration = SnackbarDuration.Long)
+            }
+        }
+    }
+
+    // 3. ⭐️ CORRECCIÓN CLAVE: Usar LaunchedEffect(Unit)
+    // Esto asegura que loadForos() se llame cada vez que la pantalla
+    // se vuelve activa (al entrar o al volver de la navegación).
+    LaunchedEffect(Unit) {
+        viewModel.loadForos()
+    }
+
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Foros", fontWeight = FontWeight.Bold) },
@@ -78,7 +94,6 @@ fun ForosPageScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                // USA el callback para navegar a CreateForumScreen
                 onClick = onNavigateToCreateForum,
                 containerColor = FABColor,
                 shape = CircleShape,
@@ -93,6 +108,21 @@ fun ForosPageScreen(
         },
         containerColor = Color.White
     ) { paddingValues ->
+
+        if (isLoading) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
+        if (forosList.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+                Text("No hay foros disponibles. ¡Sé el primero en crear uno!")
+            }
+            return@Scaffold
+        }
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -100,12 +130,16 @@ fun ForosPageScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(forosList) { foro ->
-                // Pasa la función de navegación al ForumItem
+            items(forosList, key = { it.id }) { foro ->
                 ForumItem(
                     foro = foro,
+                    currentUserId = currentUserId,
+                    onDelete = {
+                        if (!isDeleting) {
+                            viewModel.deleteForo(foro.id)
+                        }
+                    },
                     onClick = {
-                        // Navega a la ruta de mensajes/detalle (Messages.kt)
                         onNavigateTo("foro_detalle/${foro.id}")
                     }
                 )
@@ -116,13 +150,19 @@ fun ForosPageScreen(
 
 // --- Componente de Item de Foro Individual ---
 @Composable
-fun ForumItem(foro: Foro, onClick: () -> Unit) {
+fun ForumItem(
+    foro: ForoModel,
+    currentUserId: String?,
+    onDelete: (String) -> Unit,
+    onClick: () -> Unit
+) {
+    val isOwner = foro.idUser == currentUserId
+
     Card(
         shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(containerColor = CardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
-        // NOTA: Se quita el clickable del modifier principal para que el botón lo maneje
     ) {
         Column(
             modifier = Modifier
@@ -150,39 +190,40 @@ fun ForumItem(foro: Foro, onClick: () -> Unit) {
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Título y Participantes
+                // Título y Creador
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = foro.titulo,
+                        text = foro.tema,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = Color.Black,
+                        color = PrimaryBlue,
                         maxLines = 2
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    // Participantes
+                    // Creador
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.Group,
-                            contentDescription = "Participantes",
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Autor",
                             tint = WireframeGray,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${foro.participantes} participantes",
+                            text = "Autor: ${foro.username}",
                             fontSize = 12.sp,
                             color = WireframeGray
                         )
                     }
                 }
 
-                // Fecha de última actividad (Derecha)
+                // Fecha de creación
+                val dateFormatter = remember { SimpleDateFormat("dd/MM/yy", Locale.getDefault()) }
                 Text(
-                    text = foro.ultimaActividad,
+                    text = dateFormatter.format(foro.creationDate),
                     fontSize = 12.sp,
                     color = Color.DarkGray,
                     fontWeight = FontWeight.Medium,
@@ -194,7 +235,7 @@ fun ForumItem(foro: Foro, onClick: () -> Unit) {
             Divider(color = Color.LightGray)
             Spacer(modifier = Modifier.height(12.dp))
 
-            // --- 2. Pie de la tarjeta: Respuestas y Botón Responder ---
+            // --- 2. Pie de la tarjeta: Respuestas y Botón Responder/Borrar ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -208,36 +249,72 @@ fun ForumItem(foro: Foro, onClick: () -> Unit) {
                     color = PrimaryBlue
                 )
 
-                // Botón Responder (Navega a Messages.kt)
-                OutlinedButton(
-                    onClick = onClick, // Usa el callback para navegar al detalle
-                    shape = RoundedCornerShape(8.dp),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(
-                        brush = SolidColor(PrimaryBlue)
-                    )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Responder",
-                        modifier = Modifier.size(18.dp).padding(end = 4.dp),
-                        tint = PrimaryBlue
-                    )
-                    Text(
-                        "Responder",
-                        color = PrimaryBlue,
-                        fontWeight = FontWeight.Bold
-                    )
+                // Botones de Acción
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    // BOTÓN DE BORRADO CONDICIONAL
+                    if (isOwner) {
+                        IconButton(
+                            onClick = { onDelete(foro.id) },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color(0xFFF44336).copy(alpha = 0.1f)) // Rojo claro
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Eliminar Foro",
+                                tint = Color(0xFFD32F2F) // Rojo oscuro
+                            )
+                        }
+                    }
+
+                    // Botón Responder (Navega al detalle)
+                    OutlinedButton(
+                        onClick = onClick,
+                        shape = RoundedCornerShape(8.dp),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            brush = SolidColor(PrimaryBlue)
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Send,
+                            contentDescription = "Responder",
+                            modifier = Modifier.size(18.dp).padding(end = 4.dp),
+                            tint = PrimaryBlue
+                        )
+                        Text(
+                            "Responder",
+                            color = PrimaryBlue,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+// Para que el código compile y se pueda previsualizar (si tienes acceso a tus ViewModels)
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ForosPageScreenPreview() {
-    ForosPageScreen(
-        onNavigateToCreateForum = {},
-        onNavigateTo = {}
+    // Necesitarías implementar una versión mock de los servicios o usar un ViewModelFactory simple
+    // para que la previsualización funcione fuera del contexto de la app.
+    // Por simplicidad, se deja la estructura, pero esto puede fallar si no hay mocks.
+    // ForosPageScreen( onNavigateToCreateForum = {}, onNavigateTo = {} )
+
+    // Simulación simple para Preview:
+    ForumItem(
+        foro = ForoModel(
+            id = "1",
+            tema = "Ejemplo de Foro Creado por Usuario",
+            username = "AdminUser",
+            creationDate = Date(),
+            responseCount = 5,
+            idUser = "user123" // ID del usuario creador
+        ),
+        currentUserId = "user123", // Coincide para mostrar el botón Delete
+        onDelete = {},
+        onClick = {}
     )
 }

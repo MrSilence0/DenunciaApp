@@ -28,7 +28,6 @@ import mx.edu.utng.oic.denunciaapp.ui.screens.ForosPageScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.MessagesScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.PostsScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.ForgotPasswordScreen
-import mx.edu.utng.oic.denunciaapp.ui.screens.Foro
 import mx.edu.utng.oic.denunciaapp.ui.screens.MenuScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.MisDenunciasScreen
 
