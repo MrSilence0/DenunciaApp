@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.*
@@ -116,40 +117,60 @@ fun UserProfileScreen(
                     .background(HeaderBlue)
                     .height(200.dp)
             ) {
-                // Botón de Logout / Guardar
+                // Botones de ACCIÓN
                 Row(
+                    // ⚠️ CAMBIO CLAVE: Alineamos el Row a TopStart y usamos padding para separarlo de los bordes.
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(24.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        .align(Alignment.TopStart)
+                        .fillMaxWidth() // Necesario para que el Spacer funcione
+                        .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Botón de GUARDAR
+                    // 1. Botón de REGRESAR (Alineado a la IZQUIERDA)
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .background(Color(0xFF1976D2), CircleShape) // Azul más oscuro
+                            .clickable { onNavigateBack() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar a la pantalla anterior",
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    // ⚠️ SPACER: Empuja todo lo que sigue (el botón Guardar) hacia la derecha.
+                    Spacer(Modifier.weight(1f))
+
+                    // 2. Botón de GUARDAR (Alineado a la DERECHA)
                     if (!user.isAnonymus && !isLoading) {
-                        TextButton(
+                        Button(
                             onClick = viewModel::saveUserProfile,
-                            enabled = !isSaving
+                            enabled = !isSaving,
+                            // Hacemos el botón compacto y le damos un color de éxito
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), // Verde vibrante
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                         ) {
+                            Icon(
+                                imageVector = Icons.Default.Save,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color.White
+                            )
+                            Spacer(Modifier.width(4.dp))
                             Text(
-                                text = if (isSaving) "Guardando..." else "Guardar",
+                                text = if (isSaving) "Guardando" else "Guardar",
                                 color = Color.White,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
+                } // Fin del Row de botones
 
-                    // Botón de Logout
-                    Icon(
-                        imageVector = Icons.Default.Logout,
-                        contentDescription = "Logout",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(start = 8.dp)
-                            .clickable { viewModel.logoutUser(onNavigateBack) }
-                    )
-                }
-
-                // Placeholder de la Imagen de Perfil
+                // Placeholder de la Imagen de Perfil (Sin cambios)
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -255,50 +276,7 @@ fun UserProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // ⚠️ CAMPO DE DIRECCIÓN ELIMINADO
-                /*
-                // Dirección (Integración de Selección de Mapa)
-                LabelText("Dirección")
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Campo de texto para la dirección
-                    SimpleOutlinedTextField(
-                        value = addressState,
-                        onValueChange = { addressState = it },
-                        placeholder = "Presione el mapa para seleccionar",
-                        modifier = Modifier.weight(1f),
-                        interactionSource = remember { MutableInteractionSource() }
-                            .also { interactionSource ->
-                                LaunchedEffect(interactionSource) {
-                                    interactionSource.interactions.collect {
-                                        if (it is PressInteraction.Release) {
-                                            checkAndRequestLocation() // Muestra el mapa y pide permisos
-                                        }
-                                    }
-                                }
-                            }
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Botón para Maps (Icono de ubicación)
-                    IconButton(
-                        onClick = { checkAndRequestLocation() }, // Muestra el mapa y pide permisos
-                        modifier = Modifier
-                            .size(56.dp)
-                            .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
-                            .padding(8.dp)
-                    ) {
-                        Icon(Icons.Default.Map, contentDescription = "Seleccionar Ubicación", tint = HeaderBlue)
-                    }
-                }
-                Spacer(modifier = Modifier.height(32.dp)) // Espacio ajustado
-                */
             }
-            // ⚠️ FIN DE CAMPO DE DIRECCIÓN ELIMINADO
-
             // Separador (Ajustado si eliminaste el anterior)
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -417,3 +395,4 @@ fun UserProfileScreenPreview() {
         onNavigateBack = {}
     )
 }
+
