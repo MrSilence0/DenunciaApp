@@ -1,5 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -28,19 +30,18 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RegisterViewModel // Importar el ViewModel
-import mx.edu.utng.oic.denunciaapp.data.service.UserService // Mantener el import si se usa para anónimo o componentes auxiliares
-import mx.edu.utng.oic.denunciaapp.ui.viewmodel.LoginViewModel // Importar LoginViewModel para manejar anónimo o crear uno específico
+import mx.edu.utng.oic.denunciaapp.R
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RegisterViewModel
+import mx.edu.utng.oic.denunciaapp.data.service.UserService
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.LoginViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    // Inyectamos el ViewModel
     registerViewModel: RegisterViewModel = viewModel(),
-    // Usamos el ViewModel de Login para el inicio de sesión anónimo (ya que ya maneja esa lógica)
     loginViewModel: LoginViewModel = viewModel(),
-    onRegisterSuccess: () -> Unit, // Callback para navegación exitosa (vuelve a Login)
-    onNavigateBack: () -> Unit // Callback para volver a la pantalla anterior
+    onRegisterSuccess: () -> Unit,
+    onNavigateBack: () -> Unit
 ) {
     // --- Estados del Formulario (Locales a la pantalla) ---
     var name by remember { mutableStateOf("") }
@@ -76,7 +77,6 @@ fun RegisterScreen(
                 actionLabel = "Cerrar",
                 duration = SnackbarDuration.Short
             )
-            // Limpiar el mensaje después de mostrarlo (a menos que haya éxito, lo cual se maneja por isRegistrationSuccessful)
             if (!isRegistrationSuccessful) {
                 registerViewModel.clearMessage()
             }
@@ -164,10 +164,35 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp)
+                .padding(horizontal = 24.dp) // Reducir el padding horizontal total para el encabezado
                 .verticalScroll(rememberScrollState()), // Scroll vertical
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // --- NUEVO: Encabezado de la App (Icono y Nombre) ---
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // Icono de la App
+                Image(
+                    painter = painterResource(id = R.drawable.denunciaappicon),
+                    contentDescription = "Logo DenunciaApp",
+                    modifier = Modifier.size(64.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                // Nombre de la App
+                Text(
+                    text = "DenunciaApp",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF0D47A1) // Usando un azul oscuro como color principal
+                )
+            }
+            // --- FIN NUEVO ENCABEZADO ---
+
 
             // Campo Nombre
             SimpleOutlinedTextField(
@@ -334,6 +359,7 @@ fun RegisterScreen(
             ) {
                 Text("Registrarme como anonimo", fontSize = 16.sp)
             }
+            Spacer(modifier = Modifier.height(24.dp)) // Espacio al final del scroll
         }
     }
 
