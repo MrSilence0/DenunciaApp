@@ -149,12 +149,10 @@ fun AppNavHost(
                 MessagesScreen(
                     onBack = { navController.popBackStack() },
                     onOpenDrawer = {
-                        // Navegar al menú y limpiar la pila superior para que el menú sea la base
-                        navController.navigate(AppScreen.Menu.route) {
-                            popUpTo(navController.graph.id) { inclusive = false }
-                        }
+                        // CORRECCIÓN AQUÍ: Usar navegación simple
+                        navController.navigate(AppScreen.Menu.route) // YA NO USAMOS popUpTo
                     },
-                    forumId = forumId // ⬅️ Parámetro corregido y pasado
+                    forumId = forumId
                 )
             } else {
                 // Manejo de error si el ID no se pasa (o se pasa null)
