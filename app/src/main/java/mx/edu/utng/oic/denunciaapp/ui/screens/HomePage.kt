@@ -2,6 +2,7 @@ package mx.edu.utng.oic.denunciaapp.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,19 +16,46 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.edu.utng.oic.denunciaapp.R // Importar el recurso R
 import mx.edu.utng.oic.denunciaapp.navigation.AppScreen
-import mx.edu.utng.oic.denunciaapp.ui.components.ImagePlaceholder
-import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 
-// Colores específicos para esta pantalla
-val SOSBlue = Color(0xFF2962FF) // Azul botón SOS
+val SOSBlue = Color(0xFF2962FF)
+
+// --- Modelo y Datos de Noticias ---
+data class NewsData(
+    val title: String,
+    val link: String,
+    val imageResId: Int // ID del recurso drawable
+)
+
+val NewsList = listOf(
+    NewsData(
+        title = "Renuncia de Gertz Manero: crecen críticas que presionaron su salida de la FGR",
+        link = "https://mvsnoticias.com/entrevistas/2025/11/28/seguridad-en-mexico-claudia-sheinbaum-impulsa-ernestina-godoy-como-fiscal-interina-de-la-fgr-721866.html",
+        imageResId = R.drawable.notice1
+    ),
+    NewsData(
+        title = "Plan Michoacán: siete detenidos y vehículos asegurados en tres municipios",
+        link = "https://udgtv.com/noticias/fuerzas-seguridad-mexico-detienen-siete-en-michoacan/295393",
+        imageResId = R.drawable.notice2
+    ),
+    NewsData(
+        title = "Estos son los cambios que habrá en el Servicio Militar para el 2026",
+        link = "https://www.informador.mx/mexico/estos-son-los-cambios-que-habra-en-el-servicio-militar-para-el-2026-20251128-0161.html",
+        imageResId = R.drawable.notice3
+    )
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePageScreen(
@@ -64,17 +92,18 @@ fun HomePageScreen(
                     )
                 }
 
-                // 2. Logo de la App (Centro)
+                // 2. Logo de la App (Centro) - CORREGIDO
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    ImagePlaceholder(
-                        size = 60.dp,
-                        color = Color.LightGray.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(4.dp)
+                    Image(
+                        painter = painterResource(id = R.drawable.denunciaappicon),
+                        contentDescription = "Logo DenunciaApp",
+                        // Mantenemos el tamaño solicitado de 60.dp
+                        modifier = Modifier.size(60.dp)
                     )
-                    Text("Logo de la app", fontSize = 10.sp, color = Color.Gray)
+                    Text("DenunciaApp", fontSize = 10.sp, color = Color.Gray)
                 }
             }
         },
@@ -101,34 +130,38 @@ fun HomePageScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Noticia 1 (Izquierda)
+                val news1 = NewsList[0]
+                val news2 = NewsList[1]
+
+                // Noticia 1 (Izquierda) - DATOS REALES
                 NewsItem(
                     modifier = Modifier.weight(1f),
-                    title = "Título Noticia 1",
-                    imageUrl = "https://google.com",
+                    title = news1.title,
+                    imageResId = news1.imageResId,
                     height = 150.dp,
-                    onClick = { openUrl("https://www.google.com") }
+                    onClick = { openUrl(news1.link) }
                 )
 
-                // Noticia 2 (Derecha)
+                // Noticia 2 (Derecha) - DATOS REALES
                 NewsItem(
                     modifier = Modifier.weight(1f),
-                    title = "Título Noticia 2",
-                    imageUrl = "https://google.com",
+                    title = news2.title,
+                    imageResId = news2.imageResId,
                     height = 150.dp,
-                    onClick = { openUrl("https://www.google.com") }
+                    onClick = { openUrl(news2.link) }
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Noticia Inferior (Ancho completo) ---
+            // --- Noticia Inferior (Ancho completo) - DATOS REALES ---
+            val news3 = NewsList[2]
             NewsItem(
                 modifier = Modifier.fillMaxWidth(),
-                title = "Título Noticia Principal Relevante",
-                imageUrl = "https://google.com",
+                title = news3.title,
+                imageResId = news3.imageResId,
                 height = 200.dp,
-                onClick = { openUrl("https://www.google.com") }
+                onClick = { openUrl(news3.link) }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -136,35 +169,28 @@ fun HomePageScreen(
     }
 }
 
-// --- Componente de Noticia Individual (Sin cambios) ---
+// --- Componente de Noticia Individual (CORREGIDO para usar Image) ---
 @Composable
 fun NewsItem(
     modifier: Modifier = Modifier,
     title: String,
-    imageUrl: String,
+    imageResId: Int, // ⬅️ Ahora espera el ID del recurso
     height: androidx.compose.ui.unit.Dp,
     onClick: () -> Unit
 ) {
     Column(
         modifier = modifier.clickable { onClick() }
     ) {
-        // Placeholder de Imagen
-        Box(
+        // Imagen Real (Reemplaza el Placeholder)
+        Image(
+            painter = painterResource(id = imageResId),
+            contentDescription = title,
+            contentScale = ContentScale.Crop, // Ajusta la imagen al contenedor
             modifier = Modifier
                 .fillMaxWidth()
                 .height(height)
-                .background(Color.White)
-                .border(1.dp, WireframeGray), // Borde estilo wireframe
-            contentAlignment = Alignment.Center
-        ) {
-            // Líneas cruzadas para simular el placeholder de imagen "X"
-            Icon(
-                imageVector = Icons.Default.Image,
-                contentDescription = "Placeholder de imagen",
-                tint = WireframeGray,
-                modifier = Modifier.size(40.dp)
-            )
-        }
+                .clip(RoundedCornerShape(8.dp)) // Borde redondeado sutil
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -172,33 +198,19 @@ fun NewsItem(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
                 .padding(8.dp)
         ) {
             Text(
                 text = title,
                 fontSize = 14.sp,
                 color = Color.DarkGray,
-                maxLines = 1
+                maxLines = 2, // Aumentado a 2 líneas para noticias largas
+                overflow = TextOverflow.Ellipsis
             )
         }
     }
 }
-
-// --- Componentes de la barra inferior ELIMINADOS ---
-// Se recomienda mover HomeBottomBar y HomeBottomNavItem al archivo donde se
-// define BottomNavigationBar (probablemente en AppEntryNavigation o un componente auxiliar),
-// ya que NO deben estar en HomePageScreen.kt si no se usan aquí.
-// Se dejan comentados para que puedas reubicarlos si los necesitas en otro lado.
-
-/*
-@Composable
-fun HomeBottomBar(onNavigateTo: (String) -> Unit) { ... }
-
-@Composable
-fun HomeBottomNavItem(icon: ImageVector, label: String, isActive: Boolean, onClick: () -> Unit) { ... }
-*/
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

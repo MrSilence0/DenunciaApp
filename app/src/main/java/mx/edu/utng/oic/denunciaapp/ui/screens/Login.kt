@@ -1,5 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -18,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.edu.utng.oic.denunciaapp.R // Importar la clase R para recursos
 import mx.edu.utng.oic.denunciaapp.data.model.User
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.LoginViewModel
 
@@ -81,6 +84,26 @@ fun LoginScreen(
                         .verticalScroll(rememberScrollState()), // Permite scroll en pantallas pequeñas
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+
+                    // --- Logo y Nombre de la App (AÑADIDO) ---
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(bottom = 32.dp, top = 16.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.denunciaappicon),
+                            contentDescription = "DenunciaApp Icon",
+                            modifier = Modifier.size(80.dp) // Tamaño del icono
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "DenunciaApp",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.Black
+                        )
+                    }
+                    // --- Fin Logo y Nombre de la App ---
 
                     // --- Encabezado ---
                     Text(

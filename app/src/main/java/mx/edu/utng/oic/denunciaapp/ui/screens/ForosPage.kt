@@ -1,5 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
+import androidx.compose.foundation.Image // Nuevo import
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,12 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.res.painterResource // Nuevo import
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
+import mx.edu.utng.oic.denunciaapp.R // Nuevo import
 import mx.edu.utng.oic.denunciaapp.data.model.Foro as ForoModel
 import mx.edu.utng.oic.denunciaapp.data.service.ForoService
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
@@ -30,16 +33,16 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// --- Definiciones de Colores (Añadidos para completar el código) ---
+// --- Definiciones de Colores y Constantes ---
 val FABColor = Color(0xFFFFC107) // Amarillo para el FAB
 val CardBackground = Color(0xFFF0F0F0) // Fondo de tarjeta
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForosPageScreen(
     onNavigateToCreateForum: () -> Unit,
-    onNavigateTo: (String) -> Unit
+    onNavigateTo: (String) -> Unit,
+    onOpenMenu: () -> Unit // ⬅️ Añadido el callback para abrir el menú
 ) {
     // --- 1. Inicializar ViewModel y Observar Estados ---
     val foroService = remember { ForoService() }
@@ -74,21 +77,51 @@ fun ForosPageScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Foros", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
-                ),
-                actions = {
-                    IconButton(onClick = { /* Lógica de búsqueda */ }) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Buscar foro"
-                        )
-                    }
+            // Reemplazado TopAppBar por un Box personalizado para incluir el menú y el logo
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            ) {
+                // 1. Botón Abrir Menú (Izquierda)
+                IconButton(
+                    onClick = onOpenMenu, // ⬅️ Usa el nuevo callback
+                    modifier = Modifier.align(Alignment.CenterStart)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = "Abrir menú",
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.Black
+                    )
                 }
-            )
+
+                // 2. Logo de la App (Centro)
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.denunciaappicon),
+                        contentDescription = "Logo DenunciaApp",
+                        modifier = Modifier.size(50.dp)
+                    )
+                    Text("Foros", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                }
+
+                // 3. Botón de Búsqueda (Derecha) - Mantenido de la versión anterior
+                IconButton(
+                    onClick = { /* Lógica de búsqueda */ },
+                    modifier = Modifier.align(Alignment.CenterEnd)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar foro",
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.Black
+                    )
+                }
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -138,8 +171,6 @@ fun ForosPageScreen(
                         }
                     },
                     onClick = {
-                        // ⭐️ CORRECCIÓN CLAVE: Usar la ruta 'messages_page_screen/{forumId}'
-                        // en lugar de 'foro_detalle/{forumId}'
                         onNavigateTo("messages_page_screen/${foro.id}")
                     }
                 )
@@ -148,7 +179,7 @@ fun ForosPageScreen(
     }
 }
 
-// --- Componente de Item de Foro Individual ---
+// --- Componente de Item de Foro Individual (Sin cambios sustanciales, solo color) ---
 @Composable
 fun ForumItem(
     foro: ForoModel,
@@ -297,17 +328,10 @@ fun ForumItem(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ForosPageScreenPreview() {
-    ForumItem(
-        foro = ForoModel(
-            id = "1",
-            tema = "Ejemplo de Foro Corregido",
-            username = "AdminUser",
-            creationDate = Date(),
-            responseCount = 5,
-            idUser = "user123" // ID del usuario creador
-        ),
-        currentUserId = "user123", // Coincide para mostrar el botón Delete
-        onDelete = {},
-        onClick = {}
+    // Para el Preview, necesitamos simular el callback onOpenMenu
+    ForosPageScreen(
+        onNavigateToCreateForum = {},
+        onNavigateTo = {},
+        onOpenMenu = {} // Simulación
     )
 }

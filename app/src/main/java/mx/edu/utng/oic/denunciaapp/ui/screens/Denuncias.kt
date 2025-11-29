@@ -1,5 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
+import androidx.compose.foundation.Image // Nuevo import
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.res.painterResource // Nuevo import
+import mx.edu.utng.oic.denunciaapp.R // Nuevo import
 import mx.edu.utng.oic.denunciaapp.navigation.AppScreen
 
 // --- Colores del Wireframe ---
@@ -33,9 +36,7 @@ val DrawerHeaderColor = Color(0xFF455A64) // Azul grisáceo oscuro
 @Composable
 fun DenunciasScreen(
     onNavigateToMisDenuncias: () -> Unit,
-    // Callback para abrir la nueva pantalla de menú
     onOpenMenu: () -> Unit,
-    // Callbacks de navegación para Denuncias Hub
     onNavigateToAgencias: () -> Unit,
     onNavigateToPosts: () -> Unit,
     onNavigateToDenunciaFotografica: () -> Unit,
@@ -45,10 +46,7 @@ fun DenunciasScreen(
     onNavigateToRoboObjeto: () -> Unit,
     onNavigateToExtorsion: () -> Unit,
     onNavigateToDenunciaViolencia: () -> Unit
-    // ELIMINADOS: onLogOut, onNavigateToProfile, onNavigateToEmergencyContacts, etc.
-    // Toda la lógica del Drawer ahora está en MenuScreen.kt
 ) {
-    // ELIMINADOS: drawerState y scope
     Scaffold(
         topBar = {
             // Barra superior personalizada con botón de menú y botón "Mis Denuncias"
@@ -65,13 +63,17 @@ fun DenunciasScreen(
                     Icon(Icons.Default.Menu, contentDescription = "Abrir menú", modifier = Modifier.size(32.dp))
                 }
 
-                // 2. Placeholder del Logo Central
+                // 2. Logo Central (REAL) - Reemplaza ImagePlaceholder
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    ImagePlaceholder(size = 50.dp, shape = RoundedCornerShape(4.dp))
-                    Text("Logo App", fontSize = 10.sp, color = Color.Gray)
+                    Image(
+                        painter = painterResource(id = R.drawable.denunciaappicon),
+                        contentDescription = "Logo DenunciaApp",
+                        modifier = Modifier.size(50.dp) // Mantenemos el tamaño original
+                    )
+                    Text("DenunciaApp", fontSize = 10.sp, color = Color.Gray)
                 }
 
                 // 3. Botón para ir a "Mis Denuncias"
@@ -130,9 +132,7 @@ fun DenunciasScreen(
     }
 }
 
-// ELIMINADO: SideMenuContent ya que ahora es MenuScreen.kt
-
-// --- Componentes Auxiliares (sin cambios) ---
+// --- Componentes Auxiliares ---
 
 data class GridOption(val title: String, val icon: ImageVector, val onClick: () -> Unit)
 
@@ -181,6 +181,8 @@ fun MenuItem(icon: ImageVector, text: String, onClick: () -> Unit = {}) {
     }
 }
 
+// Eliminamos ImagePlaceholder ya que ya no es necesaria
+/*
 @Composable
 fun ImagePlaceholder(
     size: androidx.compose.ui.unit.Dp,
@@ -196,6 +198,7 @@ fun ImagePlaceholder(
         Icon(Icons.Default.Image, contentDescription = "Placeholder", tint = Color.Gray)
     }
 }
+*/
 
 // --- Preview Corregido ---
 @Preview(showBackground = true, showSystemUi = true)

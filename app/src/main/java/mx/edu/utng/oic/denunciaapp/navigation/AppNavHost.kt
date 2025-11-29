@@ -124,9 +124,9 @@ fun AppNavHost(
 
         composable(AppScreen.ForosPage.route) {
             ForosPageScreen(
-                // Nuevo callback para el FAB
                 onNavigateToCreateForum = { navController.navigate(AppScreen.CreateForum.route) },
-                onNavigateTo = { route -> navController.navigate(route) }
+                onNavigateTo = { route -> navController.navigate(route) },
+                onOpenMenu = { navController.navigate(AppScreen.Menu.route) }
             )
         }
 

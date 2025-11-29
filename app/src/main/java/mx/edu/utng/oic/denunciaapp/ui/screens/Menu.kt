@@ -1,5 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
+import androidx.compose.foundation.Image // Importar Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,11 +17,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource // Importar painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.edu.utng.oic.denunciaapp.R // Importar la clase R para recursos
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MenuViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MenuViewModelFactory
@@ -95,7 +98,7 @@ fun MenuScreen(
 @Composable
 fun MenuLateral(
     modifier: Modifier = Modifier,
-    userName: String, // ⬅️ Nuevo parámetro para el nombre real
+    userName: String,
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
@@ -114,33 +117,38 @@ fun MenuLateral(
             .background(Color.White)
             .padding(16.dp)
     ) {
-        // --- 1. SECCIÓN DE ENCABEZADO: LOGO, USUARIO Y BIENVENIDA ---
+        // --- 1. SECCIÓN DE ENCABEZADO: LOGO, NOMBRE APP, USUARIO Y BIENVENIDA ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 20.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            // Logo de la App (Placeholder Circular)
-            Box(
+
+            // Icono de la App (REAL)
+            Image(
+                painter = painterResource(id = R.drawable.denunciaappicon),
+                contentDescription = "Logo DenunciaApp",
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryColor.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Shield, // Icono de escudo como logo
-                    contentDescription = "Logo de la App",
-                    tint = PrimaryColor,
-                    modifier = Modifier.size(36.dp)
-                )
-            }
+                    .size(64.dp) // Mantenemos el tamaño
+                    .clip(CircleShape) // Aplicamos la forma circular
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Nombre de la App
+            Text(
+                text = "DenunciaApp",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = PrimaryColor // Color azul para el nombre de la app
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
             // Nombre del Usuario (CORREGIDO para usar el valor de la base de datos)
             Text(
-                text = userName, // ✅ Usar el nombre obtenido del ViewModel
+                text = userName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.Black
