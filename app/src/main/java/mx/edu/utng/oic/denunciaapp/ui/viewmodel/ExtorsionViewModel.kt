@@ -130,3 +130,4 @@ class ExtorsionViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

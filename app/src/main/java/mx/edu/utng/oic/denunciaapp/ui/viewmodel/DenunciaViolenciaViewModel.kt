@@ -144,3 +144,4 @@ class DenunciaViolenciaViewModelFactory(
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
+

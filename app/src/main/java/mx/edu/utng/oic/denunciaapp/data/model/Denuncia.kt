@@ -2,8 +2,6 @@ package mx.edu.utng.oic.denunciaapp.data.model
 
 import java.util.Date
 
-// Necesario para la serialización/deserialización de objetos con Gson,
-// ya que es una sealed class. Se usará este campo como discriminador.
 const val DENUNCIA_TYPE_FIELD = "denunciaClassType"
 
 enum class TipoIncidente(val id: Int) {

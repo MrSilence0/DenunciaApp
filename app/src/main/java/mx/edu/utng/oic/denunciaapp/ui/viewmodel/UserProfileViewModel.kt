@@ -12,10 +12,6 @@ import mx.edu.utng.oic.denunciaapp.data.model.UserRole
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
 import java.util.*
 
-/**
- * ViewModel para gestionar la vista de perfil del usuario.
- * Carga el perfil actual, gestiona su edición y maneja la persistencia.
- */
 class UserProfileViewModel(
     private val userService: UserService
 ) : ViewModel() {
@@ -30,8 +26,6 @@ class UserProfileViewModel(
     var isSaving by mutableStateOf(false)
         private set
 
-    // 2. Estado observable para los datos del usuario
-    // Inicializa con un objeto User vacío para evitar nullables en la UI.
     var userState by mutableStateOf(User())
         private set
 
@@ -39,9 +33,6 @@ class UserProfileViewModel(
         loadUserProfile()
     }
 
-    /**
-     * Carga el perfil del usuario activo (autenticado).
-     */
     fun loadUserProfile() {
         viewModelScope.launch {
             isLoading = true
@@ -97,9 +88,6 @@ class UserProfileViewModel(
         }
     }
 
-    /**
-     * Permite actualizar un campo individual del estado del usuario.
-     */
     fun onUserFieldChange(updatedUser: User) {
         userState = updatedUser
     }

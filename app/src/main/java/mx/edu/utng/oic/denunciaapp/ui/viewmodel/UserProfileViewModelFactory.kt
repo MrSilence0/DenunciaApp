@@ -4,9 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
 
-/**
- * Fábrica para instanciar UserProfileViewModel, inyectando el UserService.
- */
 class UserProfileViewModelFactory(
     private val userService: UserService // Dependencia: Ya se inicializa solo
 ) : ViewModelProvider.Factory {
