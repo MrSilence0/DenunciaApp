@@ -16,5 +16,6 @@ data class Foro(
     val tema: String,
     val username: String, // Asumimos que se obtiene del usuario autenticado
     val creationDate: Date,
-    val responseCount: Int = 0 // Inicialmente 0
+    val responseCount: Int = 0, // Inicialmente 0
+    val idUser: String
 )

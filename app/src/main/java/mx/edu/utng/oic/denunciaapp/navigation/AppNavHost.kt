@@ -128,17 +128,9 @@ fun AppNavHost(
         }
 
         composable(AppScreen.CreateForum.route) {
-            // Callback para manejar la creación del foro (simulado)
-            val onCreateForum: (mx.edu.utng.oic.denunciaapp.data.model.Foro) -> Unit = { nuevoForo ->
-                // Aquí iría la lógica real para guardar el foro en un ViewModel/Repository
-                println(">>> Nuevo Foro Creado: ${nuevoForo.tema} por ${nuevoForo.username}")
-                // Tras el guardado (que se simula dentro de CreateForumScreen), volvemos
-                navController.popBackStack()
-            }
-
             CreateForumScreen(
-                onNavigateBack = { navController.popBackStack() }, // Volver a la pantalla anterior
-                onCreateForum = onCreateForum
+                onNavigateBack = { navController.popBackStack() }
+
             )
         }
 

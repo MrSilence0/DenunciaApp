@@ -10,6 +10,15 @@ class UserService {
     private val auth = FirebaseAuth.getInstance()
     private val usersCollection = FirebaseFirestore.getInstance().collection("users")
 
+    // ⚠️ NUEVA FUNCIÓN AGREGADA
+    /**
+     * Devuelve el ID (UID) del usuario actualmente logueado.
+     * @throws IllegalStateException si no hay ningún usuario autenticado.
+     */
+    fun getLoggedUserId(): String {
+        return auth.currentUser?.uid ?: throw IllegalStateException("User not authenticated.")
+    }
+
     suspend fun getOrCreateUserId(): String {
         val current = auth.currentUser
         if (current != null) return current.uid
@@ -82,4 +91,3 @@ class UserService {
     }
 
 }
-
