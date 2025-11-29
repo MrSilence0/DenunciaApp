@@ -34,6 +34,7 @@ import java.util.Locale
 val FABColor = Color(0xFFFFC107) // Amarillo para el FAB
 val CardBackground = Color(0xFFF0F0F0) // Fondo de tarjeta
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForosPageScreen(
@@ -41,7 +42,6 @@ fun ForosPageScreen(
     onNavigateTo: (String) -> Unit
 ) {
     // --- 1. Inicializar ViewModel y Observar Estados ---
-    // NOTA: En una app real, los servicios se inyectarían. Usamos remember para simular el singleton
     val foroService = remember { ForoService() }
     val userService = remember { UserService() }
     val factory = remember { ForoViewModelFactory(foroService, userService) }
@@ -65,9 +65,7 @@ fun ForosPageScreen(
         }
     }
 
-    // 3. ⭐️ CORRECCIÓN CLAVE: Usar LaunchedEffect(Unit)
-    // Esto asegura que loadForos() se llame cada vez que la pantalla
-    // se vuelve activa (al entrar o al volver de la navegación).
+    // 3. Cargar Foros
     LaunchedEffect(Unit) {
         viewModel.loadForos()
     }
@@ -140,7 +138,9 @@ fun ForosPageScreen(
                         }
                     },
                     onClick = {
-                        onNavigateTo("foro_detalle/${foro.id}")
+                        // ⭐️ CORRECCIÓN CLAVE: Usar la ruta 'messages_page_screen/{forumId}'
+                        // en lugar de 'foro_detalle/{forumId}'
+                        onNavigateTo("messages_page_screen/${foro.id}")
                     }
                 )
             }
@@ -294,20 +294,13 @@ fun ForumItem(
     }
 }
 
-// Para que el código compile y se pueda previsualizar (si tienes acceso a tus ViewModels)
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ForosPageScreenPreview() {
-    // Necesitarías implementar una versión mock de los servicios o usar un ViewModelFactory simple
-    // para que la previsualización funcione fuera del contexto de la app.
-    // Por simplicidad, se deja la estructura, pero esto puede fallar si no hay mocks.
-    // ForosPageScreen( onNavigateToCreateForum = {}, onNavigateTo = {} )
-
-    // Simulación simple para Preview:
     ForumItem(
         foro = ForoModel(
             id = "1",
-            tema = "Ejemplo de Foro Creado por Usuario",
+            tema = "Ejemplo de Foro Corregido",
             username = "AdminUser",
             creationDate = Date(),
             responseCount = 5,

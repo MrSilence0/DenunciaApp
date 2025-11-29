@@ -54,7 +54,7 @@ fun MessagesMainPageScreen(
             items(threads, key = { it.forumId }) { thread ->
                 ChatThreadItem(thread = thread) { forumId ->
                     // Navega a la ruta del chat detallado, pasando el forumId
-                    onNavigateToChatDetail(AppScreen.MessagesPage.route.replace("{forumId}", forumId))
+                    //onNavigateToChatDetail(AppScreen.MessagesPage.route.replace("{forumId}", forumId))
                 }
                 Divider(color = Color.LightGray, thickness = 0.5.dp)
             }

@@ -20,7 +20,6 @@ fun AppEntryNavigation() {
         AppScreen.HomePage.route,
         AppScreen.Denuncias.route,
         AppScreen.ForosPage.route,
-        AppScreen.MessagesPage.route,
         AppScreen.Agencias.route,
         AppScreen.Messages.route
     )

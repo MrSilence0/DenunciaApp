@@ -14,7 +14,7 @@ sealed class AppScreen(val route: String) {
 
     // ...
     data object ForosPage : AppScreen("foros_page_screen") // RUTA CORRECTA
-    data object Messages : AppScreen("messages_page_screen") // RUTA CORRECTA // Pantalla principal con el Grid
+    data object Messages : AppScreen("messages_page_screen/{forumId}")
 
     data object Agencias : AppScreen("agencias_screen") //
     data object DenunciaFotografica : AppScreen("denuncia_fotografica_screen") //
@@ -38,7 +38,6 @@ sealed class AppScreen(val route: String) {
 
     data object CreateForum : AppScreen("create_forum") // Nueva ruta para crear foro}
 
-    data object MessagesPage : AppScreen("messages_screen") // Nueva ruta para mensajes
-
 
 }
+

@@ -1,12 +1,16 @@
 package mx.edu.utng.oic.denunciaapp.navigation
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 
 // Importar todas las pantallas necesarias (se asume que estas Composable existen)
 import mx.edu.utng.oic.denunciaapp.ui.screens.LoginScreen
@@ -133,10 +137,29 @@ fun AppNavHost(
             )
         }
 
-        composable(AppScreen.Messages.route) {
-            MessagesScreen(onBack = { navController.popBackStack() },
-                onOpenDrawer = { navController.navigate(AppScreen.Menu.route) }
-            )
+        composable(
+            route = AppScreen.Messages.route,
+            arguments = listOf(navArgument("forumId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            // 1. Extraemos el argumento 'forumId' del backStackEntry
+            val forumId = backStackEntry.arguments?.getString("forumId")
+
+            // 2. Usamos el ID para cargar MessagesScreen
+            if (forumId != null) {
+                MessagesScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenDrawer = {
+                        // Navegar al menú y limpiar la pila superior para que el menú sea la base
+                        navController.navigate(AppScreen.Menu.route) {
+                            popUpTo(navController.graph.id) { inclusive = false }
+                        }
+                    },
+                    forumId = forumId // ⬅️ Parámetro corregido y pasado
+                )
+            } else {
+                // Manejo de error si el ID no se pasa (o se pasa null)
+                Text("Error: ID del Foro no encontrado.", color = Color.Red)
+            }
         }
 
         composable(AppScreen.Menu.route) {
@@ -151,8 +174,8 @@ fun AppNavHost(
 
         composable(AppScreen.Posts.route) {
             PostsScreen(onBack = { navController.popBackStack() },
-                onNavigateToChat = { postId -> navController.navigate("${AppScreen.Messages.route}/$postId") }, // Navega a la pantalla de mensajes con el ID del post
-                onNavigateToMenu = { navController.navigate(AppScreen.Menu.route) } // Navega al menú lateral
+                onNavigateToChat = { postId -> navController.navigate("messages_page_screen/$postId") },
+                onNavigateToMenu = { navController.navigate(AppScreen.Menu.route) }
             )
         }
 
