@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.tooling.preview.Preview
 import mx.edu.utng.oic.denunciaapp.navigation.AppScreen
 
+
 /**
  * Componente principal de la barra de navegación inferior, utilizado por el AppEntryNavigation.
  *
@@ -28,11 +29,12 @@ import mx.edu.utng.oic.denunciaapp.navigation.AppScreen
 fun BottomNavigationBar(onNavigateTo: (String) -> Unit) {
     // Lista de ítems para la navegación principal, mapeando a las rutas de AppScreen
     val navItems = listOf(
-        // CORRECCIÓN: Usar AppScreen.route para obtener las rutas exactas.
         BottomNavItemData(Icons.Default.Home, "Inicio", AppScreen.HomePage.route),
         BottomNavItemData(Icons.Default.Warning, "Denuncias", AppScreen.Denuncias.route),
-        BottomNavItemData(Icons.Default.Groups, "Foros", AppScreen.ForosPage.route),   // RUTA CORREGIDA: AppScreen.ForosPage.route
-        BottomNavItemData(Icons.Default.Mail, "Mensajes", AppScreen.Messages.route), // <<-- CORRECCIÓN AQUÍ, // RUTA CORREGIDA: AppScreen.Messages.route
+        BottomNavItemData(Icons.Default.Groups, "Foros", AppScreen.ForosPage.route),
+        // Nota: Si Messages.route requiere un argumento (forumId), esta navegación directa
+        // desde la barra inferior puede fallar, pero se mantiene por estructura.
+        BottomNavItemData(Icons.Default.Mail, "Mensajes", AppScreen.Messages.route),
     )
 
     Row(
@@ -48,7 +50,7 @@ fun BottomNavigationBar(onNavigateTo: (String) -> Unit) {
             BottomNavItem(
                 icon = item.icon,
                 label = item.label,
-                // isActive: Se recomienda obtener el currentRoute desde AppEntryNavigation para activarlo
+                // isActive: Debería calcularse usando el currentRoute
                 isActive = false,
                 onClick = { onNavigateTo(item.route) }
             )
@@ -57,7 +59,8 @@ fun BottomNavigationBar(onNavigateTo: (String) -> Unit) {
         // Botón SOS destacado
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.clickable { onNavigateTo("sos_action") } // Mantener "sos_action" si es una acción directa/dialog
+            // CORRECCIÓN: Usar la ruta Sos declarada
+            modifier = Modifier.clickable { onNavigateTo(AppScreen.Sos.route) }
         ) {
             Box(
                 modifier = Modifier
@@ -77,7 +80,6 @@ fun BottomNavigationBar(onNavigateTo: (String) -> Unit) {
     }
 }
 
-// Data class para la información de un ítem de navegación
 data class BottomNavItemData(
     val icon: ImageVector,
     val label: String,

@@ -15,13 +15,13 @@ fun AppEntryNavigation() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    // Define qué rutas deben mostrar la barra de navegación inferior
     val showBottomBar = currentRoute in listOf(
         AppScreen.HomePage.route,
         AppScreen.Denuncias.route,
         AppScreen.ForosPage.route,
         AppScreen.Agencias.route,
-        AppScreen.Messages.route
+        AppScreen.Messages.route,
+        AppScreen.Sos.route
     )
 
     Scaffold(
@@ -29,21 +29,23 @@ fun AppEntryNavigation() {
             if (showBottomBar) {
                 BottomNavigationBar(
                     onNavigateTo = { route ->
-                        navController.navigate(route) {
-                            // Configuración para evitar duplicar pantallas en la pila
-                            popUpTo(AppScreen.Denuncias.route) {
-                                saveState = true
+                        if (route == AppScreen.Sos.route) {
+                            navController.navigate(route)
+                        } else {
+                            navController.navigate(route) {
+                                // Configuración para evitar duplicar pantallas en la pila
+                                popUpTo(AppScreen.Denuncias.route) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
                     }
                 )
             }
         }
     ) { paddingValues ->
-        // Contenedor principal de la navegación
-        // AppNavHost debe contener la lógica para mapear rutas a Composable Screens
         AppNavHost(
             navController = navController,
             modifier = Modifier.padding(paddingValues),

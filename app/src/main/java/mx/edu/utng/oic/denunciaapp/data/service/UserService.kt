@@ -10,7 +10,6 @@ class UserService {
     private val auth = FirebaseAuth.getInstance()
     private val usersCollection = FirebaseFirestore.getInstance().collection("users")
 
-    // ⚠️ NUEVA FUNCIÓN AGREGADA
     /**
      * Devuelve el ID (UID) del usuario actualmente logueado.
      * @throws IllegalStateException si no hay ningún usuario autenticado.

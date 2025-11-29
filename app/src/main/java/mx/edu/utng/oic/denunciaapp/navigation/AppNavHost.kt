@@ -11,8 +11,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-
-// Importar todas las pantallas necesarias (se asume que estas Composable existen)
 import mx.edu.utng.oic.denunciaapp.ui.screens.LoginScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.RegisterScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.UserProfileScreen
@@ -34,6 +32,7 @@ import mx.edu.utng.oic.denunciaapp.ui.screens.PostsScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.ForgotPasswordScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.MenuScreen
 import mx.edu.utng.oic.denunciaapp.ui.screens.MisDenunciasScreen
+import mx.edu.utng.oic.denunciaapp.ui.screens.SosScreen
 
 
 /**
@@ -77,8 +76,6 @@ fun AppNavHost(
             )
         }
 
-        // [NUEVA RUTA DE AUTENTICACIÓN AÑADIDA]
-        // Se asume que AppScreen tiene: data object ForgotPassword : AppScreen("forgot_password_screen")
         composable(AppScreen.ForgotPassword.route) {
             ForgotPasswordScreen(onNavigateBack = { navController.popBackStack() })
         }
@@ -86,7 +83,6 @@ fun AppNavHost(
         composable(AppScreen.UserProfile.route) {
             UserProfileScreen(onNavigateBack = { navController.popBackStack() })
         }
-
 
         // --- 2. Rutas de Nivel Superior (Bottom Bar / Menú Principal) ---
 
@@ -97,9 +93,6 @@ fun AppNavHost(
             )
         }
 
-        // Dentro de AppNavHost.kt, en el bloque NavHost
-
-// Pantalla principal Denuncias Hub (Contiene el Grid de opciones)
         composable(AppScreen.Denuncias.route) {
             DenunciasScreen(
                 // Navegación desde el TopBar/Íconos
@@ -141,21 +134,16 @@ fun AppNavHost(
             route = AppScreen.Messages.route,
             arguments = listOf(navArgument("forumId") { type = NavType.StringType })
         ) { backStackEntry ->
-            // 1. Extraemos el argumento 'forumId' del backStackEntry
             val forumId = backStackEntry.arguments?.getString("forumId")
-
-            // 2. Usamos el ID para cargar MessagesScreen
             if (forumId != null) {
                 MessagesScreen(
                     onBack = { navController.popBackStack() },
                     onOpenDrawer = {
-                        // CORRECCIÓN AQUÍ: Usar navegación simple
-                        navController.navigate(AppScreen.Menu.route) // YA NO USAMOS popUpTo
+                        navController.navigate(AppScreen.Menu.route)
                     },
                     forumId = forumId
                 )
             } else {
-                // Manejo de error si el ID no se pasa (o se pasa null)
                 Text("Error: ID del Foro no encontrado.", color = Color.Red)
             }
         }
@@ -189,7 +177,6 @@ fun AppNavHost(
             )
         }
 
-        // Agencias cercanas (generalmente con mapa)
         composable(AppScreen.Agencias.route) {
             AgenciasScreen(onNavigateBack = { navController.popBackStack() })
         }
@@ -248,6 +235,15 @@ fun AppNavHost(
                 onReportSaved = {
 
                     navController.popBackStack()
+                }
+            )
+        }
+
+        composable(AppScreen.Sos.route) {
+            SosScreen(
+                onOpenMenu = { navController.navigate(AppScreen.Menu.route) },
+                onCallNumber = { phoneNumber ->
+                    println("Acción de llamada intentada al número: $phoneNumber")
                 }
             )
         }

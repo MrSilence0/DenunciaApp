@@ -28,8 +28,8 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
-val AgencyPinColor = Color(0xFFD32F2F) // Rojo para los pines
-val AgencyIconBlue = Color(0xFF0D47A1) // Azul fuerte para el icono de la lista
+val AgencyPinColor = Color(0xFFD32F2F)
+val AgencyIconBlue = Color(0xFF0D47A1)
 
 // Modelo de datos para las agencias
 data class Agencia(
@@ -37,10 +37,9 @@ data class Agencia(
     val nombre: String,
     val direccion: String,
     val horario: String,
-    val latLng: LatLng // Nueva propiedad para las coordenadas
+    val latLng: LatLng
 )
 
-// Datos de las Agencias con sus coordenadas (Aproximadas para Guanajuato)
 private val agenciesData = listOf(
     Agencia(
         id = 1,
@@ -84,9 +83,8 @@ private val agenciesData = listOf(
 fun AgenciasScreen(
     onNavigateBack: () -> Unit
 ) {
-    val defaultLocation = LatLng(21.0188, -101.2587) // Punto central aproximado de Guanajuato
+    val defaultLocation = LatLng(21.0188, -101.2587)
     val cameraPositionState = rememberCameraPositionState {
-        // Inicializar la cámara apuntando al centro de Guanajuato con un buen zoom
         position = CameraPosition.fromLatLngZoom(defaultLocation, 8f)
     }
 
@@ -220,8 +218,6 @@ fun AgencyItem(agencia: Agencia) {
         }
     }
 }
-
-// Se elimina MapPin y MapPlaceholderContent ya que usamos GoogleMap
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

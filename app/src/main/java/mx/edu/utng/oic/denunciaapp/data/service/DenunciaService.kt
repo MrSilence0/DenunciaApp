@@ -22,7 +22,7 @@ class DenunciaService(
         val denuncias = mutableListOf<Denuncia>()
         try {
             val snapshot = denunciaRepository
-                .getDenunciasCollection() // Obtiene la CollectionReference
+                .getDenunciasCollection()
                 .whereEqualTo("idUser", idUser)
                 .get()
                 .await()
@@ -31,7 +31,7 @@ class DenunciaService(
                 // Obtiene el campo discriminador (denunciaClassType)
                 val type = doc.getString(DENUNCIA_TYPE_FIELD)
 
-                val denuncia = when (type) { // Mapea a la subclase correcta
+                val denuncia = when (type) {
                     "DenunciaFotografica" -> doc.toObject(DenunciaFotografica::class.java)
                     "PersonaDesaparecida" -> doc.toObject(PersonaDesaparecida::class.java)
                     "RoboVehiculo" -> doc.toObject(RoboVehiculo::class.java)

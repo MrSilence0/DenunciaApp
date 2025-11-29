@@ -39,10 +39,6 @@ import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
 import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaFotograficaViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory
-
-
-// --- Constantes de la pantalla ---
-// Latitud y Longitud inicial (Ejemplo: Centro de México)
 val DefaultLocation = LatLng(19.4326, -99.1332)
 const val DefaultZoom = 15f
 

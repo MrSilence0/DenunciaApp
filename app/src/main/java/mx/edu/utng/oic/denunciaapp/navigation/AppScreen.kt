@@ -7,18 +7,18 @@ package mx.edu.utng.oic.denunciaapp.navigation
 sealed class AppScreen(val route: String) {
     data object Login : AppScreen("login")
     data object Register : AppScreen("register")
-    data object UserProfile : AppScreen("user_profile") // Opción del Menú Lateral
+    data object UserProfile : AppScreen("user_profile")
 
     data object HomePage : AppScreen("home")
     data object Denuncias : AppScreen("denuncias_hub")
 
     // ...
-    data object ForosPage : AppScreen("foros_page_screen") // RUTA CORRECTA
+    data object ForosPage : AppScreen("foros_page_screen")
     data object Messages : AppScreen("messages_page_screen/{forumId}")
 
-    data object Agencias : AppScreen("agencias_screen") //
-    data object DenunciaFotografica : AppScreen("denuncia_fotografica_screen") //
-    data object MisDenuncias : AppScreen("mis_denuncias") // Botón en TopBar de DenunciasScreen
+    data object Agencias : AppScreen("agencias_screen")
+    data object DenunciaFotografica : AppScreen("denuncia_fotografica_screen")
+    data object MisDenuncias : AppScreen("mis_denuncias")
 
     data object PersonaDesaparecida : AppScreen("persona_desaparecida_screen")
     data object RoboVehiculo : AppScreen("robo_vehiculo_screen")
@@ -34,10 +34,9 @@ sealed class AppScreen(val route: String) {
 
     data object EmergencyContacts : AppScreen("emergency_contacts_screen")
     data object TermsAndConditions : AppScreen("terms_and_conditions_screen")
-    data object DenunciaDetail : AppScreen("denuncia_detail_screen/{denunciaId}") // Nueva ruta para detalle de denuncia
+    data object DenunciaDetail : AppScreen("denuncia_detail_screen/{denunciaId}")
 
-    data object CreateForum : AppScreen("create_forum") // Nueva ruta para crear foro}
-
-
+    data object CreateForum : AppScreen("create_forum")
+    data object Sos : AppScreen("sos_screen")
 }
 

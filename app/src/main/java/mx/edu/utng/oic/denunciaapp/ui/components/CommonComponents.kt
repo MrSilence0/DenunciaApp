@@ -33,13 +33,9 @@ import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 
-// --- Colores y constantes reutilizables ---
 val WireframeGray = Color(0xFF9E9E9E)
 
-// ----------------------------------------------------
-// 1. LabelText: Etiqueta de texto alineada a la izquierda
-// ----------------------------------------------------
-// --- CÓDIGO CORREGIDO ---
+
 @Composable
 fun LabelText(text: String) {
     Text(
@@ -53,9 +49,6 @@ fun LabelText(text: String) {
     )
 }
 
-// ----------------------------------------------------
-// 2. SimpleOutlinedTextField: Campo de texto genérico (no dialog)
-// ----------------------------------------------------
 @Composable
 fun SimpleOutlinedTextField(
     value: String,
@@ -83,9 +76,6 @@ fun SimpleOutlinedTextField(
     )
 }
 
-// ----------------------------------------------------
-// 3. OutlinedTextFieldWithDialog: Campo que abre un Pop-up (ej. Fecha, Ubicación)
-// ----------------------------------------------------
 @Composable
 fun OutlinedTextFieldWithDialog(
     value: String,
@@ -119,9 +109,6 @@ fun OutlinedTextFieldWithDialog(
     )
 }
 
-// ----------------------------------------------------
-// 4. GenderOption: Componente de RadioButton + Etiqueta
-// ----------------------------------------------------
 @Composable
 fun GenderOption(label: String, selectedOption: String, onSelect: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -139,9 +126,6 @@ fun GenderOption(label: String, selectedOption: String, onSelect: () -> Unit) {
     }
 }
 
-// ----------------------------------------------------
-// 5. ImagePlaceholder: Box genérico para Logos/Imágenes con corrección de Shape
-// ----------------------------------------------------
 @Composable
 fun ImagePlaceholder(
     size: Dp,
@@ -163,9 +147,6 @@ fun ImagePlaceholder(
     )
 }
 
-// ----------------------------------------------------
-// 6. GridMenuItem: Elemento del menú de denuncias
-// ----------------------------------------------------
 @Composable
 fun GridMenuItem(title: String, icon: ImageVector, onClick: () -> Unit) {
     Column(

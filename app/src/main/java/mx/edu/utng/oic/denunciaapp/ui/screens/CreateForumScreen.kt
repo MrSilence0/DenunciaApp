@@ -26,7 +26,6 @@ import mx.edu.utng.oic.denunciaapp.ui.viewmodel.ForoViewModelFactory // Factorí
 import java.text.SimpleDateFormat
 import java.util.*
 
-// Colores (Asegúrate de que PrimaryBlue esté definido en tu proyecto o cámbialo por un color fijo)
 val SuccessGreen = Color(0xFF4CAF50)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -176,8 +175,6 @@ fun CreateForumScreen(
         }
     }
 }
-
-// Componente auxiliar para mostrar la información del foro (simplificado)
 @Composable
 fun InfoRow(label: String, value: String) {
     Row(

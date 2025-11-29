@@ -18,18 +18,16 @@ enum class TipoIncidente(val id: Int) {
 sealed class Denuncia {
     abstract val id: String
     abstract val tipo: TipoIncidente
-    abstract val idUser: String // ID del usuario activo
+    abstract val idUser: String
     abstract val creationDate: Date
-    // Nuevo campo para la serialización/deserialización (discriminador)
     abstract val denunciaClassType: String
 }
 
 
 /**
- * 1. Denuncia Fotográfica (Descripción y Ubicación)
+ * 1. Denuncia Fotográfica
  */
 data class DenunciaFotografica(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),
@@ -43,10 +41,9 @@ data class DenunciaFotografica(
 
 
 /**
- * 2. Persona Desaparecida (Datos personales, sin localización)
+ * 2. Persona Desaparecida
  */
 data class PersonaDesaparecida(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),
@@ -54,17 +51,16 @@ data class PersonaDesaparecida(
     val sexo: String = "",
     val descripcionFisica: String = "",
     val vestimenta: String = "",
-    val edad: Int = 0, // Usar 0 como valor por defecto para Int
+    val edad: Int = 0,
     override val tipo: TipoIncidente = TipoIncidente.PERSONA_DESAPARECIDA,
     override val denunciaClassType: String = "PersonaDesaparecida"
 ) : Denuncia()
 
 
 /**
- * 3. Robo de Vehículo (Datos del vehículo, sin descripción ni localización general)
+ * 3. Robo de Vehículo
  */
 data class RoboVehiculo(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),
@@ -72,7 +68,7 @@ data class RoboVehiculo(
     val numeroSerie: String = "",
     val marca: String = "",
     val color: String = "",
-    val anio: Int = 0, // Usar 0 como valor por defecto para Int
+    val anio: Int = 0,
     val nombreReportante: String = "",
     override val tipo: TipoIncidente = TipoIncidente.ROBO_VEHICULO,
     override val denunciaClassType: String = "RoboVehiculo"
@@ -80,10 +76,9 @@ data class RoboVehiculo(
 
 
 /**
- * 4. Extorsión (Número telefónico y Descripción)
+ * 4. Extorsión
  */
 data class Extorsion(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),
@@ -95,10 +90,9 @@ data class Extorsion(
 
 
 /**
- * 5. Robo a Casa (Descripción, Ubicación y Teléfono de contacto)
+ * 5. Robo a Casa
  */
 data class RoboCasa(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),
@@ -113,16 +107,15 @@ data class RoboCasa(
 
 
 /**
- * 6. Robo de Objeto (Detalles del objeto y Localización)
+ * 6. Robo de Objeto
  */
 data class RoboObjeto(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),
     val tipoObjeto: String = "",
     val marca: String = "",
-    val estado: String = "", // Ej: "Nuevo", "Usado", "Dañado"
+    val estado: String = "",
     val color: String = "",
     val anio: Int? = null,
     val locationAddress: String? = null,
@@ -137,7 +130,6 @@ data class RoboObjeto(
  * 7. Denuncia de Violencia (Descripción, Ubicación, Tipo de Conducta y Teléfono)
  */
 data class DenunciaViolencia(
-    // ATENCIÓN: TODOS los campos ahora tienen un valor por defecto.
     override val id: String = "",
     override val idUser: String = "",
     override val creationDate: Date = Date(),

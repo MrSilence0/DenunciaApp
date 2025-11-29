@@ -27,17 +27,15 @@ class MessageService {
                 .set(message)
                 .await()
 
-            // 2. ⭐️ Actualizar el contador de respuestas (responseCount) en el Foro
+            // 2. Actualizar el contador de respuestas (responseCount) en el Foro
             // Usamos una transacción para asegurar la consistencia.
             db.runTransaction { transaction ->
                 val forumRef = forumsCollection.document(message.forumId)
                 val forumSnapshot = transaction.get(forumRef)
 
-                // Obtener el contador actual, o 0 si no existe/es nulo
                 val currentCount = forumSnapshot.getLong("responseCount")?.toInt() ?: 0
                 val newCount = currentCount + 1
 
-                // Actualizar el contador en el documento del foro
                 transaction.update(forumRef, "responseCount", newCount)
             }.await()
 
@@ -71,7 +69,6 @@ class MessageService {
                 }
             }
 
-        // Esta lambda se ejecuta cuando el Flow ya no es observado (collect).
         awaitClose {
             subscription.remove()
         }
