@@ -8,6 +8,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,6 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import mx.edu.utng.oic.denunciaapp.data.service.UserService
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MenuViewModel
+import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MenuViewModelFactory
 
 // --- DEFINICIÓN DE COLORES COMO CONSTANTES LOCALES ---
 val WireframeGray = Color(0xFF9E9E9E)
@@ -45,6 +52,14 @@ fun MenuScreen(
     onLogOut: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
+    // 1. Inicializar ViewModel y Factory
+    val userService = remember { UserService() }
+    val factory = remember { MenuViewModelFactory(userService) }
+    val viewModel: MenuViewModel = viewModel(factory = factory)
+
+    // 2. Observar el nombre del usuario
+    val userName by viewModel.userName.collectAsState()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,7 +77,8 @@ fun MenuScreen(
         // a las funciones de navegación externas.
         MenuLateral(
             modifier = Modifier.padding(paddingValues),
-            currentRoute = null, // No se necesita selección de ruta ya que es una pantalla de menú
+            userName = userName, // ⬅️ Pasar el nombre del usuario
+            currentRoute = null,
             onNavigate = { route ->
                 when (route) {
                     ROUTE_PROFILE -> onNavigateToProfile()
@@ -79,6 +95,7 @@ fun MenuScreen(
 @Composable
 fun MenuLateral(
     modifier: Modifier = Modifier,
+    userName: String, // ⬅️ Nuevo parámetro para el nombre real
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
@@ -121,9 +138,9 @@ fun MenuLateral(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nombre del Usuario (Simulado)
+            // Nombre del Usuario (CORREGIDO para usar el valor de la base de datos)
             Text(
-                text = "Usuario App Denuncia",
+                text = userName, // ✅ Usar el nombre obtenido del ViewModel
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
                 color = Color.Black
@@ -143,7 +160,6 @@ fun MenuLateral(
 
         // --- 2. OPCIONES DE NAVEGACIÓN (Botones) ---
         items.forEach { item ->
-            // Usamos item.route como currentRoute si fuera necesario destacar la opción actual
             val isSelected = currentRoute == item.route
             NavigationDrawerItem(
                 label = { Text(item.label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
@@ -167,12 +183,10 @@ fun MenuLateral(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MenuScreenPreview() {
-    MenuScreen(
-        onNavigateToProfile = {},
-        onNavigateToEmergency = {},
-        onNavigateToTerms = {},
-        onLogOut = {},
-        onNavigateBack = {}
+    // Para el Preview, podemos simular el componente MenuLateral directamente con un nombre fijo
+    MenuLateral(
+        userName = "Carlos Hernández",
+        currentRoute = ROUTE_PROFILE,
+        onNavigate = {}
     )
 }
-
