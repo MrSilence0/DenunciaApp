@@ -1,6 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
-import androidx.compose.foundation.Image // Importar Image
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -27,12 +27,6 @@ import mx.edu.utng.oic.denunciaapp.R // Importar la clase R para recursos
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MenuViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MenuViewModelFactory
-
-// --- DEFINICIÓN DE COLORES COMO CONSTANTES LOCALES ---
-val WireframeGray = Color(0xFF9E9E9E)
-val PrimaryColor = Color(0xFF0D47A1) // Azul principal para botones/iconos
-
-// Constantes usadas internamente en MenuLateral para mapear las acciones
 private const val ROUTE_PROFILE = "profile_screen"
 private const val ROUTE_EMERGENCY = "emergency_contact_screen"
 private const val ROUTE_TERMS = "terms_and_conditions_screen"
@@ -44,7 +38,6 @@ data class DrawerItem(val icon: ImageVector, val label: String, val route: Strin
 
 /**
  * COMPONENTE PRINCIPAL DE PANTALLA: MenuScreen
- * Esta función es la que llama el AppNavHost.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,32 +48,38 @@ fun MenuScreen(
     onLogOut: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    // 1. Inicializar ViewModel y Factory
     val userService = remember { UserService() }
     val factory = remember { MenuViewModelFactory(userService) }
     val viewModel: MenuViewModel = viewModel(factory = factory)
 
-    // 2. Observar el nombre del usuario
     val userName by viewModel.userName.collectAsState()
+
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Menú Principal", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Menú Principal", fontWeight = FontWeight.Bold, color = onSurfaceColor)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = onSurfaceColor)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor,
+                    navigationIconContentColor = onSurfaceColor
+                )
             )
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        // Envuelve tu contenido MenuLateral, mapeando la función de navegación interna
-        // a las funciones de navegación externas.
         MenuLateral(
             modifier = Modifier.padding(paddingValues),
-            userName = userName, // ⬅️ Pasar el nombre del usuario
+            userName = userName,
             currentRoute = null,
             onNavigate = { route ->
                 when (route) {
@@ -94,7 +93,7 @@ fun MenuScreen(
     }
 }
 
-// --- COMPONENTE DEL MENÚ LATERAL (Adaptado del código original) ---
+// --- COMPONENTE DEL MENÚ LATERAL (Corregido) ---
 @Composable
 fun MenuLateral(
     modifier: Modifier = Modifier,
@@ -102,6 +101,14 @@ fun MenuLateral(
     currentRoute: String?,
     onNavigate: (String) -> Unit
 ) {
+    // --- Colores Dinámicos del Tema ---
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val background = MaterialTheme.colorScheme.background
+    val dividerColor = MaterialTheme.colorScheme.outline
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+
     // Definición de las opciones de navegación
     val items = listOf(
         DrawerItem(Icons.Default.Person, "Mi Perfil", ROUTE_PROFILE),
@@ -114,10 +121,9 @@ fun MenuLateral(
         modifier = modifier
             .fillMaxHeight()
             .fillMaxWidth()
-            .background(Color.White)
+            .background(background)
             .padding(16.dp)
     ) {
-        // --- 1. SECCIÓN DE ENCABEZADO: LOGO, NOMBRE APP, USUARIO Y BIENVENIDA ---
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -125,13 +131,13 @@ fun MenuLateral(
             horizontalAlignment = Alignment.Start
         ) {
 
-            // Icono de la App (REAL)
+            // Icono de la App
             Image(
                 painter = painterResource(id = R.drawable.denunciaappicon),
                 contentDescription = "Logo DenunciaApp",
                 modifier = Modifier
-                    .size(64.dp) // Mantenemos el tamaño
-                    .clip(CircleShape) // Aplicamos la forma circular
+                    .size(64.dp)
+                    .clip(CircleShape)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -141,17 +147,17 @@ fun MenuLateral(
                 text = "DenunciaApp",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = PrimaryColor // Color azul para el nombre de la app
+                color = primaryColor
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nombre del Usuario (CORREGIDO para usar el valor de la base de datos)
+            // Nombre del Usuario
             Text(
                 text = userName,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = Color.Black
+                color = onSurfaceColor
             )
             Spacer(modifier = Modifier.height(4.dp))
 
@@ -159,29 +165,34 @@ fun MenuLateral(
             Text(
                 text = "¡Bienvenido/a!",
                 fontSize = 14.sp,
-                color = WireframeGray
+                color = onSurfaceVariantColor
             )
         }
 
-        Divider(color = WireframeGray.copy(alpha = 0.5f), thickness = 1.dp)
+        Divider(color = dividerColor.copy(alpha = 0.5f), thickness = 1.dp)
         Spacer(Modifier.height(8.dp))
 
-        // --- 2. OPCIONES DE NAVEGACIÓN (Botones) ---
         items.forEach { item ->
             val isSelected = currentRoute == item.route
             NavigationDrawerItem(
                 label = { Text(item.label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
-                icon = { Icon(item.icon, contentDescription = null, tint = if (isSelected) PrimaryColor else Color.Black) },
+                icon = {
+                    Icon(
+                        item.icon,
+                        contentDescription = null,
+                        tint = if (isSelected) primaryColor else onSurfaceColor
+                    )
+                },
                 selected = isSelected,
                 onClick = {
                     onNavigate(item.route)
                 },
                 modifier = Modifier.padding(vertical = 4.dp),
                 colors = NavigationDrawerItemDefaults.colors(
-                    selectedContainerColor = PrimaryColor.copy(alpha = 0.1f),
-                    selectedIconColor = PrimaryColor,
-                    selectedTextColor = PrimaryColor,
-                    unselectedTextColor = Color.Black
+                    selectedContainerColor = primaryColor.copy(alpha = 0.1f),
+                    selectedIconColor = primaryColor,
+                    selectedTextColor = primaryColor,
+                    unselectedTextColor = onSurfaceColor // Texto de ítem no seleccionado
                 )
             )
         }
@@ -191,11 +202,11 @@ fun MenuLateral(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MenuScreenPreview() {
-    // Para el Preview, podemos simular el componente MenuLateral directamente con un nombre fijo
-    MenuLateral(
-        userName = "Carlos Hernández",
-        currentRoute = ROUTE_PROFILE,
-        onNavigate = {}
-    )
+    MaterialTheme {
+        MenuLateral(
+            userName = "Carlos Hernández",
+            currentRoute = ROUTE_PROFILE,
+            onNavigate = {}
+        )
+    }
 }
-

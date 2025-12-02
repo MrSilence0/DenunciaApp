@@ -29,13 +29,10 @@ import androidx.compose.ui.unit.sp
 import mx.edu.utng.oic.denunciaapp.R // Importar el recurso R
 import mx.edu.utng.oic.denunciaapp.navigation.AppScreen
 
-val SOSBlue = Color(0xFF2962FF)
-
-// --- Modelo y Datos de Noticias ---
 data class NewsData(
     val title: String,
     val link: String,
-    val imageResId: Int // ID del recurso drawable
+    val imageResId: Int
 )
 
 val NewsList = listOf(
@@ -65,7 +62,13 @@ fun HomePageScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Función auxiliar para abrir URLs
+    // --- Colores Dinámicos del Tema ---
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val outlineColor = MaterialTheme.colorScheme.outline
+
     fun openUrl(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         context.startActivity(intent)
@@ -73,10 +76,10 @@ fun HomePageScreen(
 
     Scaffold(
         topBar = {
-            // Barra superior personalizada
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(surfaceColor)
                     .padding(16.dp)
             ) {
                 // 1. Botón Menú Lateral (Izquierda)
@@ -88,11 +91,11 @@ fun HomePageScreen(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Abrir menú",
                         modifier = Modifier.size(32.dp),
-                        tint = Color.Black
+                        tint = onSurfaceColor
                     )
                 }
 
-                // 2. Logo de la App (Centro) - CORREGIDO
+                // 2. Logo de la App (Centro)
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -100,15 +103,14 @@ fun HomePageScreen(
                     Image(
                         painter = painterResource(id = R.drawable.denunciaappicon),
                         contentDescription = "Logo DenunciaApp",
-                        // Mantenemos el tamaño solicitado de 60.dp
                         modifier = Modifier.size(60.dp)
                     )
-                    Text("DenunciaApp", fontSize = 10.sp, color = Color.Gray)
+                    Text("DenunciaApp", fontSize = 10.sp, color = onSurfaceVariantColor)
                 }
             }
         },
 
-        containerColor = Color.White
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -116,12 +118,13 @@ fun HomePageScreen(
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
                 .verticalScroll(scrollState)
+                .background(backgroundColor)
         ) {
             Text(
                 text = "Noticias relevantes",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.Black,
+                color = onSurfaceColor,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
 
@@ -133,35 +136,42 @@ fun HomePageScreen(
                 val news1 = NewsList[0]
                 val news2 = NewsList[1]
 
-                // Noticia 1 (Izquierda) - DATOS REALES
                 NewsItem(
                     modifier = Modifier.weight(1f),
                     title = news1.title,
                     imageResId = news1.imageResId,
                     height = 150.dp,
-                    onClick = { openUrl(news1.link) }
+                    onClick = { openUrl(news1.link) },
+                    onSurfaceColor = onSurfaceColor,
+                    outlineColor = outlineColor,
+                    surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
                 )
 
-                // Noticia 2 (Derecha) - DATOS REALES
                 NewsItem(
                     modifier = Modifier.weight(1f),
                     title = news2.title,
                     imageResId = news2.imageResId,
                     height = 150.dp,
-                    onClick = { openUrl(news2.link) }
+                    onClick = { openUrl(news2.link) },
+                    onSurfaceColor = onSurfaceColor,
+                    outlineColor = outlineColor,
+                    surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Noticia Inferior (Ancho completo) - DATOS REALES ---
+            // --- Noticia Inferior (Ancho completo) ---
             val news3 = NewsList[2]
             NewsItem(
                 modifier = Modifier.fillMaxWidth(),
                 title = news3.title,
                 imageResId = news3.imageResId,
                 height = 200.dp,
-                onClick = { openUrl(news3.link) }
+                onClick = { openUrl(news3.link) },
+                onSurfaceColor = onSurfaceColor,
+                outlineColor = outlineColor,
+                surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -169,43 +179,47 @@ fun HomePageScreen(
     }
 }
 
-// --- Componente de Noticia Individual (CORREGIDO para usar Image) ---
+// --- Componente de Noticia Individual (Corregido) ---
 @Composable
 fun NewsItem(
     modifier: Modifier = Modifier,
     title: String,
-    imageResId: Int, // ⬅️ Ahora espera el ID del recurso
+    imageResId: Int,
     height: androidx.compose.ui.unit.Dp,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onSurfaceColor: Color,
+    outlineColor: Color,
+    surfaceVariantColor: Color
 ) {
     Column(
         modifier = modifier.clickable { onClick() }
     ) {
-        // Imagen Real (Reemplaza el Placeholder)
+        // Imagen Real
         Image(
             painter = painterResource(id = imageResId),
             contentDescription = title,
-            contentScale = ContentScale.Crop, // Ajusta la imagen al contenedor
+            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(height)
-                .clip(RoundedCornerShape(8.dp)) // Borde redondeado sutil
+                .clip(RoundedCornerShape(8.dp))
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Label no editable
+        // Label no editable (Estilo de recuadro de texto)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, Color.LightGray, RoundedCornerShape(4.dp))
+                .border(1.dp, outlineColor, RoundedCornerShape(4.dp))
+                .background(surfaceVariantColor, RoundedCornerShape(4.dp))
                 .padding(8.dp)
         ) {
             Text(
                 text = title,
                 fontSize = 14.sp,
-                color = Color.DarkGray,
-                maxLines = 2, // Aumentado a 2 líneas para noticias largas
+                color = onSurfaceColor,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -215,8 +229,10 @@ fun NewsItem(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun HomePageScreenPreview() {
-    HomePageScreen(
-        onOpenDrawer = { },
-        onNavigateTo = {}
-    )
+    MaterialTheme {
+        HomePageScreen(
+            onOpenDrawer = { },
+            onNavigateTo = {}
+        )
+    }
 }

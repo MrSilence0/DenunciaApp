@@ -27,9 +27,7 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-
-val AgencyPinColor = Color(0xFFD32F2F)
-val AgencyIconBlue = Color(0xFF0D47A1)
+import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 
 // Modelo de datos para las agencias
 data class Agencia(
@@ -40,41 +38,42 @@ data class Agencia(
     val latLng: LatLng
 )
 
+// Datos
 private val agenciesData = listOf(
     Agencia(
         id = 1,
         nombre = "MP Dolores Hidalgo",
         direccion = "Av. De los Heroes 8, Viñedo, 37804 Dolores Hidalgo...",
         horario = "24 horas",
-        latLng = LatLng(21.18597861019045, -100.91918814562699) // Dolores Hidalgo 21.18597861019045, -100.91918814562699
+        latLng = LatLng(21.18597861019045, -100.91918814562699)
     ),
     Agencia(
         id = 2,
         nombre = "Fiscalía San Miguel de Allende",
         direccion = "Blvrd de la Conspiración, La Luz, 37746 San Miguel de Allende, Gto.",
         horario = "09:00 - 18:00",
-        latLng = LatLng(20.9149, -100.7583) // San Miguel de Allende
+        latLng = LatLng(20.9149, -100.7583)
     ),
     Agencia(
         id = 3,
         nombre = "Módulo de Atención León",
         direccion = "Blvd. Hermanos Aldama 4321, Ciudad Industrial, 37490 León...",
         horario = "08:00 - 20:00",
-        latLng = LatLng(21.0991, -101.5997) // León
+        latLng = LatLng(21.0991, -101.5997)
     ),
     Agencia(
         id = 4,
         nombre = "Agencia Silao",
         direccion = "C. 5 de Mayo 13-15, Centro, 36100 Silao de la Victoria, Gto.",
         horario = "24 horas",
-        latLng = LatLng(20.9427, -101.4255) // Silao
+        latLng = LatLng(20.9427, -101.4255)
     ),
     Agencia(
         id = 5,
         nombre = "Oficina San Felipe",
         direccion = "San Felipe - Ocampo Sn, 37600 San Felipe, Gto.",
         horario = "09:00 - 17:00",
-        latLng = LatLng(21.4883, -101.2185) // San Felipe
+        latLng = LatLng(21.4883, -101.2185)
     )
 )
 
@@ -83,6 +82,16 @@ private val agenciesData = listOf(
 fun AgenciasScreen(
     onNavigateBack: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val primaryColor = colorScheme.primary
+    val onPrimaryColor = colorScheme.onPrimary
+    val surfaceColor = colorScheme.surface
+    val onSurfaceColor = colorScheme.onSurface
+    val backgroundColor = colorScheme.background
+    val outlineColor = colorScheme.outline
+    val surfaceVariantColor = colorScheme.surfaceVariant // Para fondo sutil
+    val onSurfaceVariantColor = colorScheme.onSurfaceVariant // Para texto sutil
+
     val defaultLocation = LatLng(21.0188, -101.2587)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(defaultLocation, 8f)
@@ -91,50 +100,53 @@ fun AgenciasScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Agencias cercanas", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Agencias cercanas", fontWeight = FontWeight.Bold, color = onSurfaceColor)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = onSurfaceColor)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor,
+                    navigationIconContentColor = onSurfaceColor
                 )
             )
         },
-        containerColor = Color.White
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp)
+                .background(backgroundColor)
         ) {
             // --- Mapa Interactivo de Google Maps ---
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(300.dp) // Altura para el mapa
+                    .height(300.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(WireframeGray)
-                    .border(1.dp, WireframeGray, RoundedCornerShape(8.dp))
+                    .background(surfaceVariantColor)
+                    .border(1.dp, outlineColor, RoundedCornerShape(8.dp))
             ) {
                 GoogleMap(
                     modifier = Modifier.fillMaxSize(),
                     cameraPositionState = cameraPositionState,
                     uiSettings = MapUiSettings(
-                        zoomControlsEnabled = true, // Permite controles de zoom
-                        mapToolbarEnabled = false // Deshabilita la barra de navegación de Maps
+                        zoomControlsEnabled = true,
+                        mapToolbarEnabled = false
                     )
                 ) {
-                    // 2. Añadir un marcador por cada agencia
                     agenciesData.forEach { agencia ->
                         Marker(
                             state = MarkerState(position = agencia.latLng),
                             title = agencia.nombre,
                             snippet = agencia.direccion,
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED) // Pines rojos
+                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                         )
                     }
                 }
@@ -146,16 +158,25 @@ fun AgenciasScreen(
                 text = "Lista de agencias",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
+                // CORRECCIÓN 8: Usar onSurfaceColor
+                color = onSurfaceColor,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
-            // --- Lista de Agencias con los nuevos datos ---
+            // --- Lista de Agencias ---
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(agenciesData) { agencia -> // Usamos la lista de datos reales
-                    AgencyItem(agencia)
+                items(agenciesData) { agencia ->
+                    AgencyItem(
+                        agencia = agencia,
+                        onSurfaceColor = onSurfaceColor,
+                        surfaceColor = surfaceColor,
+                        outlineColor = outlineColor,
+                        primaryColor = primaryColor, // Mapeo de AgencyIconBlue
+                        onSurfaceVariantColor = onSurfaceVariantColor
+                    )
                 }
             }
         }
@@ -163,11 +184,18 @@ fun AgenciasScreen(
 }
 
 @Composable
-fun AgencyItem(agencia: Agencia) {
+fun AgencyItem(
+    agencia: Agencia,
+    onSurfaceColor: Color,
+    surfaceColor: Color,
+    outlineColor: Color,
+    primaryColor: Color,
+    onSurfaceVariantColor: Color
+) {
     Card(
         shape = RoundedCornerShape(8.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, Color.LightGray),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, outlineColor),
+        colors = CardDefaults.cardColors(containerColor = surfaceColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -177,17 +205,17 @@ fun AgencyItem(agencia: Agencia) {
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Círculo Azul (Icono)
+            // Círculo (Icono)
             Box(
                 modifier = Modifier
                     .size(50.dp)
-                    .background(AgencyIconBlue, CircleShape),
+                    .background(primaryColor, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Place,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
@@ -198,21 +226,21 @@ fun AgencyItem(agencia: Agencia) {
                 Text(
                     text = agencia.nombre,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
+                    color = onSurfaceColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                // Mostrar solo una parte de la dirección en la lista para que no sea muy larga
                 val shortAddress = agencia.direccion.split(",").take(2).joinToString(", ")
                 Text(
                     text = shortAddress,
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = onSurfaceVariantColor
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Horario: ${agencia.horario}",
                     fontSize = 12.sp,
-                    color = Color.DarkGray
+                    color = onSurfaceVariantColor
                 )
             }
         }
@@ -222,5 +250,7 @@ fun AgencyItem(agencia: Agencia) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun AgenciasScreenPreview() {
-    AgenciasScreen(onNavigateBack = {})
+    MaterialTheme {
+        AgenciasScreen(onNavigateBack = {})
+    }
 }

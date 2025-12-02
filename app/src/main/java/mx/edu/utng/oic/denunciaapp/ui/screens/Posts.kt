@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 
 // --- DEFINICIONES REQUERIDAS ---
 val PrimaryBlue = Color(0xFF0D47A1) // Azul principal

@@ -28,17 +28,12 @@ import mx.edu.utng.oic.denunciaapp.data.model.Message as MessageModel
 import mx.edu.utng.oic.denunciaapp.data.service.ForoService
 import mx.edu.utng.oic.denunciaapp.data.service.MessageService
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
+import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MessageViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MessageViewModelFactory
-
-val AppPrimaryColor = Color(0xFF1976D2)
-val AppDividerColor = Color(0xFFE0E0E0)
-val ReplyButtonColor = Color(0xFF43A047)
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MessagesScreen(
@@ -46,13 +41,27 @@ fun MessagesScreen(
     onOpenDrawer: () -> Unit,
     forumId: String
 ) {
-    // --- 1. Inicializar ViewModel y Observar Estados ---
+    val colorScheme = MaterialTheme.colorScheme
+    val primaryColor = colorScheme.primary
+    val onPrimaryColor = colorScheme.onPrimary
+    val surfaceColor = colorScheme.surface
+    val onSurfaceColor = colorScheme.onSurface
+    val backgroundColor = colorScheme.background
+    val outlineColor = colorScheme.outline
+    val onSurfaceVariantColor = colorScheme.onSurfaceVariant
+    val primaryContainerColor = colorScheme.primaryContainer
+    val onPrimaryContainerColor = colorScheme.onPrimaryContainer
+    val surfaceVariantColor = colorScheme.surfaceVariant
+    val onSurfaceVariantColor2 = colorScheme.onSurfaceVariant
+    val secondaryContainerColor = colorScheme.secondaryContainer
+    val onSecondaryContainerColor = colorScheme.onSecondaryContainer
+    val tertiaryColor = colorScheme.tertiary // Mapeo de ReplyButtonColor
+
+
     val messageService = remember { MessageService() }
     val foroService = remember { ForoService() }
     val userService = remember { UserService() }
 
-    // ⭐️ AJUSTE: Si el forumId se usa para inicializar la fábrica, debe estar disponible.
-    // Aunque la fábrica solo usa los servicios, es importante la coherencia.
     val factory = remember { MessageViewModelFactory(messageService, foroService, userService) }
     val viewModel: MessageViewModel = viewModel(factory = factory)
 
@@ -93,25 +102,25 @@ fun MessagesScreen(
             TopAppBar(
                 title = {
                     Text(
-                        // Muestra el tema del foro o "Cargando..."
                         currentForum?.tema ?: "Cargando Foro...",
                         fontWeight = FontWeight.Bold,
-                        maxLines = 1
+                        maxLines = 1,
+                        color = onSurfaceColor
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Volver", tint = onSurfaceColor)
                     }
                 },
                 actions = {
                     IconButton(onClick = onOpenDrawer) {
-                        Icon(Icons.Default.Menu, contentDescription = "Abrir menú lateral")
+                        Icon(Icons.Default.Menu, contentDescription = "Abrir menú lateral", tint = onSurfaceColor)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor
                 )
             )
         },
@@ -125,26 +134,36 @@ fun MessagesScreen(
                         messageText = ""
                     }
                 },
-                // Habilitado si no está enviando y si el usuario actual está identificado
-                isEnabled = !isSending && currentUserId != null
+                isEnabled = !isSending && currentUserId != null,
+                surfaceColor = surfaceColor,
+                onSurfaceColor = onSurfaceColor,
+                outlineColor = outlineColor,
+                tertiaryColor = tertiaryColor,
+                onTertiaryColor = colorScheme.onTertiary,
+                surfaceVariantColor = surfaceVariantColor,
+                onSurfaceVariantColor = onSurfaceVariantColor
             )
         },
-        containerColor = Color.White
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Cabecera con datos del Foro Original (Simplificada)
+            // Cabecera con datos del Foro Original
             currentForum?.let {
                 PostHeader(
                     forumName = it.username,
                     dateTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(it.creationDate),
-                    isSimplified = true
+                    isSimplified = true,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = onSurfaceVariantColor,
+                    secondaryContainerColor = secondaryContainerColor,
+                    onSecondaryContainerColor = onSecondaryContainerColor
                 )
             }
-            Divider(color = AppDividerColor, thickness = 1.dp)
+            Divider(color = outlineColor, thickness = 1.dp)
 
             // Columna para las Respuestas (Chat)
             LazyColumn(
@@ -160,14 +179,14 @@ fun MessagesScreen(
                         if (!currentForum?.tema.isNullOrBlank()) {
                             Text(
                                 text = "Tema del Foro: ${currentForum!!.tema}",
-                                color = WireframeGray,
+                                color = onSurfaceVariantColor,
                                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                                 modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
                             )
-                            Divider(color = AppDividerColor)
+                            Divider(color = outlineColor)
                             Text(
                                 text = "Aún no hay respuestas. ¡Sé el primero en participar!",
-                                color = WireframeGray,
+                                color = onSurfaceVariantColor,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 32.dp),
@@ -176,7 +195,7 @@ fun MessagesScreen(
                         } else {
                             // Muestra el indicador si el foro aún está cargando
                             Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator()
+                                CircularProgressIndicator(color = primaryColor)
                             }
                         }
                     }
@@ -186,7 +205,13 @@ fun MessagesScreen(
                     ChatMessageItem(
                         message = message,
                         isCurrentUser = message.userId == currentUserId,
-                        username = "Usuario ${message.userId.take(4)}..."
+                        username = "Usuario ${message.userId.take(4)}...",
+                        primaryColor = primaryColor,
+                        primaryContainerColor = primaryContainerColor,
+                        onPrimaryContainerColor = onPrimaryContainerColor,
+                        surfaceVariantColor = surfaceVariantColor,
+                        onSurfaceColor = onSurfaceColor,
+                        onSurfaceVariantColor = onSurfaceVariantColor
                     )
                 }
             }
@@ -194,16 +219,20 @@ fun MessagesScreen(
     }
 }
 
-// ----------------------------------------------------------------------
-// --- COMPONENTES AUXILIARES ---
-// ----------------------------------------------------------------------
-
 @Composable
-fun PostHeader(forumName: String, dateTime: String, isSimplified: Boolean = false) {
+fun PostHeader(
+    forumName: String,
+    dateTime: String,
+    isSimplified: Boolean = false,
+    onSurfaceColor: Color,
+    onSurfaceVariantColor: Color,
+    secondaryContainerColor: Color,
+    onSecondaryContainerColor: Color
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFE3F2FD))
+            .background(secondaryContainerColor)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         if (isSimplified) {
@@ -211,24 +240,34 @@ fun PostHeader(forumName: String, dateTime: String, isSimplified: Boolean = fals
                 text = "Creador del Post: $forumName",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
-                color = Color.Black
+                color = onSecondaryContainerColor
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
                 text = "Publicado: $dateTime",
                 fontSize = 12.sp,
-                color = Color.DarkGray
+                color = onSecondaryContainerColor.copy(alpha = 0.8f)
             )
         } else {
-            // Lógica para la versión no simplificada (si la conservas)
         }
     }
 }
 
 
 @Composable
-fun ChatMessageItem(message: MessageModel, isCurrentUser: Boolean, username: String) {
-    val bubbleColor = if (isCurrentUser) Color(0xFFDCF8C6) else Color(0xFFF0F0F0)
+fun ChatMessageItem(
+    message: MessageModel,
+    isCurrentUser: Boolean,
+    username: String,
+    primaryColor: Color,
+    primaryContainerColor: Color,
+    onPrimaryContainerColor: Color,
+    surfaceVariantColor: Color,
+    onSurfaceColor: Color,
+    onSurfaceVariantColor: Color
+) {
+    val bubbleColor = if (isCurrentUser) primaryContainerColor else surfaceVariantColor
+    val contentColor = if (isCurrentUser) onPrimaryContainerColor else onSurfaceColor
     val alignment = if (isCurrentUser) Alignment.End else Alignment.Start
     val paddingStart = if (isCurrentUser) 60.dp else 0.dp
     val paddingEnd = if (isCurrentUser) 0.dp else 60.dp
@@ -252,18 +291,18 @@ fun ChatMessageItem(message: MessageModel, isCurrentUser: Boolean, username: Str
                         text = username,
                         fontWeight = FontWeight.Bold,
                         fontSize = 12.sp,
-                        color = AppPrimaryColor
+                        color = primaryColor
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                 }
-                Text(text = message.contenido, fontSize = 14.sp)
+                Text(text = message.contenido, fontSize = 14.sp, color = contentColor)
             }
         }
 
         Text(
             text = timeFormatter.format(message.dateTime),
             fontSize = 10.sp,
-            color = WireframeGray,
+            color = onSurfaceVariantColor,
             modifier = Modifier.padding(top = 4.dp, end = 8.dp, start = 8.dp)
         )
     }
@@ -271,28 +310,38 @@ fun ChatMessageItem(message: MessageModel, isCurrentUser: Boolean, username: Str
 
 
 @Composable
-fun MessageInput(messageText: String, onMessageChange: (String) -> Unit, onSend: () -> Unit, isEnabled: Boolean) {
+fun MessageInput(
+    messageText: String,
+    onMessageChange: (String) -> Unit,
+    onSend: () -> Unit,
+    isEnabled: Boolean,
+    surfaceColor: Color,
+    onSurfaceColor: Color,
+    outlineColor: Color,
+    tertiaryColor: Color,
+    onTertiaryColor: Color,
+    surfaceVariantColor: Color,
+    onSurfaceVariantColor: Color
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.White)
-            .border(1.dp, AppDividerColor)
+            .background(surfaceColor)
+            .border(1.dp, outlineColor)
             .padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Usamos BasicTextField para evitar el conflicto de Material3
         BasicTextField(
             value = messageText,
             onValueChange = onMessageChange,
             modifier = Modifier
                 .weight(1f)
-                .background(Color(0xFFF7F7F7), RoundedCornerShape(24.dp))
-                .border(1.dp, AppDividerColor, RoundedCornerShape(24.dp))
-                .height(48.dp), // Altura fija similar a OutlinedTextField
-            textStyle = TextStyle(color = Color.Black, fontSize = 16.sp), // Estilo del texto
+                .background(surfaceVariantColor, RoundedCornerShape(24.dp))
+                .border(1.dp, outlineColor, RoundedCornerShape(24.dp))
+                .height(48.dp),
+            textStyle = TextStyle(color = onSurfaceColor, fontSize = 16.sp),
             enabled = isEnabled,
             singleLine = true,
-            // decorationBox nos permite añadir el placeholder y el padding interno
             decorationBox = { innerTextField ->
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -301,7 +350,7 @@ fun MessageInput(messageText: String, onMessageChange: (String) -> Unit, onSend:
                     if (messageText.isEmpty()) {
                         Text(
                             "Escribe tu respuesta...",
-                            color = WireframeGray,
+                            color = onSurfaceVariantColor,
                             fontSize = 16.sp
                         )
                     }
@@ -313,13 +362,12 @@ fun MessageInput(messageText: String, onMessageChange: (String) -> Unit, onSend:
         Spacer(modifier = Modifier.width(8.dp))
         FloatingActionButton(
             onClick = onSend,
-            containerColor = ReplyButtonColor,
+            containerColor = tertiaryColor,
             shape = CircleShape,
             modifier = Modifier.size(48.dp),
 
-        ) {
-            Icon(Icons.Default.Send, contentDescription = "Enviar", tint = Color.White)
+            ) {
+            Icon(Icons.Default.Send, contentDescription = "Enviar", tint = onTertiaryColor)
         }
     }
 }
-

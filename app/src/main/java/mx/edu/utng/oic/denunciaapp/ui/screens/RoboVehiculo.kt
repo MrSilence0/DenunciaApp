@@ -24,10 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.widget.Toast
-import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
-import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
-import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
-import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
+import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton // Asumimos que es un color fijo para peligro
+import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton // Asumimos que es un color fijo para acciones
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RoboVehiculoViewModel
 
@@ -36,12 +34,11 @@ import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RoboVehiculoViewModel
 @Composable
 fun RoboVehiculoScreen(
     onNavigateBack: () -> Unit,
-    // 1. Inyectar ViewModel usando la factoría centralizada
     viewModel: RoboVehiculoViewModel = viewModel(
         factory = DenunciaAppViewModelFactory.createRoboVehiculoViewModelFactory()
     )
 ) {
-    // --- Estados del formulario ---
+    // --- Estados del formulario y ViewModel (Sin cambios) ---
     var placas by remember { mutableStateOf("") }
     var numeroSerie by remember { mutableStateOf("") }
     var marca by remember { mutableStateOf("") }
@@ -50,22 +47,19 @@ fun RoboVehiculoScreen(
     var nombreVehiculo by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
-    // --- Estados del ViewModel ---
     val isSaving by viewModel.isSaving.collectAsState()
     val saveError by viewModel.saveError.collectAsState()
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val context = LocalContext.current
 
-    // 2. Efecto Secundario para manejar el éxito
+    // Efectos Secundarios (Sin cambios)
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
             Toast.makeText(context, "✅ Reporte de vehículo enviado con éxito.", Toast.LENGTH_LONG).show()
             viewModel.resetStates()
-            onNavigateBack() // Vuelve al menú principal o pantalla anterior
+            onNavigateBack()
         }
     }
-
-    // 3. Efecto Secundario para manejar el error
     LaunchedEffect(saveError) {
         if (saveError != null) {
             Toast.makeText(context, "❌ Error al enviar: $saveError", Toast.LENGTH_LONG).show()
@@ -73,35 +67,45 @@ fun RoboVehiculoScreen(
         }
     }
 
-    // Validación básica
     val isFormValid = placas.isNotBlank() && numeroSerie.isNotBlank() && anio.toIntOrNull() != null
+
+    // --- Colores Dinámicos del Tema ---
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val surfaceColor = MaterialTheme.colorScheme.surface
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Robo de Vehículo", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Robo de Vehículo", fontWeight = FontWeight.Bold, color = onSurfaceColor)
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = onSurfaceColor // Usar color dinámico
                 ),
                 actions = {
                     TextButton(
                         onClick = onNavigateBack,
                         enabled = !isSaving
                     ) {
+                        // Se mantiene RedCancelButton como color fijo de utilidad/peligro
                         Text("Cancelar", color = RedCancelButton, fontWeight = FontWeight.Bold)
                     }
                 }
             )
         },
-        containerColor = Color.White // Fondo blanco
+        // --- CORRECCIÓN 3: Usar color de fondo dinámico ---
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background), // Asegurar que el scroll también sea dinámico
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -111,8 +115,8 @@ fun RoboVehiculoScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                    .border(1.dp, WireframeGray, RoundedCornerShape(8.dp)),
+                    .background(surfaceColor.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (selectedImageUri == null) {
@@ -121,13 +125,16 @@ fun RoboVehiculoScreen(
                             imageVector = Icons.Default.Image,
                             contentDescription = "Placeholder de imagen",
                             modifier = Modifier.size(60.dp),
-                            tint = WireframeGray
+                            tint = onSurfaceVariantColor
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Foto del vehículo (opcional)", color = WireframeGray)
+                        Text(
+                            "Foto del vehículo (opcional)",
+                            color = onSurfaceVariantColor
+                        )
                     }
                 } else {
-                    Text("Imagen del vehículo seleccionada", color = Color.DarkGray)
+                    Text("Imagen del vehículo seleccionada", color = onSurfaceColor)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -140,134 +147,146 @@ fun RoboVehiculoScreen(
                 // Botón "Cámara"
                 Button(
                     onClick = { /* Lógica para abrir la cámara */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    colors = ButtonDefaults.buttonColors(containerColor = onSurfaceVariantColor.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f),
                     enabled = !isSaving
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cámara")
+                    Text("Cámara", color = onSurfaceColor)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 // Botón "Galería"
                 Button(
                     onClick = { /* Lógica para abrir la galería */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    colors = ButtonDefaults.buttonColors(containerColor = onSurfaceVariantColor.copy(alpha = 0.5f)),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f),
                     enabled = !isSaving
                 ) {
                     Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Galería")
+                    Text("Galería", color = onSurfaceColor)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // --- Campos del formulario ---
+
             // Placas
-            LabelText("Placas *")
+            LabelText("Placas *",)
             OutlinedTextField(
                 value = placas,
                 onValueChange = { placas = it },
-                placeholder = { Text("ABC-123", color = WireframeGray) },
+                placeholder = { Text("ABC-123", color = onSurfaceVariantColor) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 enabled = !isSaving,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             // Número de serie
-            LabelText("Número de serie (VIN) *")
+            LabelText("Número de serie (VIN) *",)
             OutlinedTextField(
                 value = numeroSerie,
                 onValueChange = { numeroSerie = it },
-                placeholder = { Text("17 dígitos del VIN", color = WireframeGray) },
+                placeholder = { Text("17 dígitos del VIN", color = onSurfaceVariantColor) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 enabled = !isSaving,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             // Marca
-            LabelText("Marca")
+            LabelText("Marca",)
             OutlinedTextField(
                 value = marca,
                 onValueChange = { marca = it },
-                placeholder = { Text("Ej: Nissan, Ford, VW", color = WireframeGray) },
+                placeholder = { Text("Ej: Nissan, Ford, VW", color = onSurfaceVariantColor) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 enabled = !isSaving,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             // Color
-            LabelText("Color")
+            LabelText("Color",)
             OutlinedTextField(
                 value = color,
                 onValueChange = { color = it },
-                placeholder = { Text("Ej: Rojo, Gris Oxford", color = WireframeGray) },
+                placeholder = { Text("Ej: Rojo, Gris Oxford", color = onSurfaceVariantColor) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 enabled = !isSaving,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             // Año
-            LabelText("Año *")
+            LabelText("Año *",)
             OutlinedTextField(
                 value = anio,
                 onValueChange = { anio = it.filter { char -> char.isDigit() }.take(4) },
-                placeholder = { Text("Ej: 2018", color = WireframeGray) },
+                placeholder = { Text("Ej: 2018", color = onSurfaceVariantColor) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
                 enabled = !isSaving,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
                 )
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Nombre del vehículo (Mapeado a nombreReportante en el ViewModel)
-            LabelText("Descripción del Vehículo/Reportante")
+            LabelText("Descripción del Vehículo/Reportante",)
             OutlinedTextField(
                 value = nombreVehiculo,
                 onValueChange = { nombreVehiculo = it },
-                placeholder = { Text("Modelo, tipo de vehículo o nombre del reportante", color = WireframeGray) },
+                placeholder = { Text("Modelo, tipo de vehículo o nombre del reportante", color = onSurfaceVariantColor) },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 enabled = !isSaving,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
                 )
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Texto descriptivo (Lorem Ipsum) ---
+            // --- Texto descriptivo ---
             Text(
                 text = "Los campos marcados con * son obligatorios. Asegúrese de proporcionar la información del vehículo de la forma más precisa posible para facilitar la búsqueda.",
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = onSurfaceVariantColor,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
             )
 
@@ -275,7 +294,6 @@ fun RoboVehiculoScreen(
 
             // --- Botón "Guardar" ---
             Button(
-                // 4. Llamar a submitDenuncia del ViewModel
                 onClick = {
                     viewModel.submitDenuncia(
                         placas = placas,
@@ -283,12 +301,12 @@ fun RoboVehiculoScreen(
                         marca = marca,
                         color = color,
                         anio = anio,
-                        nombreVehiculo = nombreVehiculo, // Usado como nombreReportante
+                        nombreVehiculo = nombreVehiculo,
                         imageUri = selectedImageUri
                     )
                 },
-                // Deshabilitar si está guardando o si el formulario no es válido
                 enabled = !isSaving && isFormValid,
+                // Se mantiene YellowButton para el contenedor (color fijo de acción)
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
@@ -297,10 +315,12 @@ fun RoboVehiculoScreen(
             ) {
                 if (isSaving) {
                     CircularProgressIndicator(
-                        color = Color.DarkGray,
+                        // --- CORRECCIÓN 12: Usar color de texto dinámico o un color contrastante fijo ---
+                        color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(24.dp)
                     )
                 } else {
+                    // El color del texto del botón debe contrastar con YellowButton (generalmente negro o gris oscuro)
                     Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 }
             }
@@ -315,7 +335,6 @@ fun RoboVehiculoScreen(
 fun RoboVehiculoPreview() {
     RoboVehiculoScreen(
         onNavigateBack = {},
-        // Se utiliza la factoría para generar una vista previa del ViewModel (puede ser un mock)
         viewModel = viewModel(
             factory = DenunciaAppViewModelFactory.createRoboVehiculoViewModelFactory()
         )

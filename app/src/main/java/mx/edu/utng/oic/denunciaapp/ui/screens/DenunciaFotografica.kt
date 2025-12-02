@@ -29,7 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
+import mx.edu.utng.oic.denunciaapp.ui.components.LabelText // Se añade LabelText que se usa
 import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 import mx.edu.utng.oic.denunciaapp.ui.utils.MapSelectionDialog
 import mx.edu.utng.oic.denunciaapp.ui.utils.checkLocationPermission
@@ -39,6 +39,7 @@ import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
 import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaFotograficaViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory
+
 val DefaultLocation = LatLng(19.4326, -99.1332)
 const val DefaultZoom = 15f
 
@@ -46,35 +47,42 @@ const val DefaultZoom = 15f
 @Composable
 fun DenunciaFotograficaScreen(
     onCancel: () -> Unit,
-    onSuccess: () -> Unit // Nueva acción para cuando la denuncia se guarda exitosamente
+    onSuccess: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val primaryColor = colorScheme.primary
+    val onPrimaryColor = colorScheme.onPrimary
+    val tertiaryColor = colorScheme.tertiary
+    val onTertiaryColor = colorScheme.onTertiary
+    val errorColor = colorScheme.error
+    val surfaceColor = colorScheme.surface
+    val onSurfaceColor = colorScheme.onSurface
+    val backgroundColor = colorScheme.background
+    val outlineColor = colorScheme.outline
+    val surfaceVariantColor = colorScheme.surfaceVariant
+    val onSurfaceVariantColor = colorScheme.onSurfaceVariant
+
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // 1. Inicialización del ViewModel
     val viewModel: DenunciaFotograficaViewModel = viewModel(
         factory = DenunciaAppViewModelFactory.createDenunciaFotograficaViewModelFactory()
     )
 
-    // --- Estados del formulario ---
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) } // URI de la imagen (simulada)
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
-    // --- Estado del Mapa y Ubicación ---
     var showMapDialog by remember { mutableStateOf(false) }
     var currentCameraPosition by remember { mutableStateOf(CameraPosition.fromLatLngZoom(DefaultLocation, DefaultZoom)) }
-    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) } // Coordenadas del marcador
+    var selectedMarkerLocation by remember { mutableStateOf<LatLng?>(null) }
     var isLoadingLocation by remember { mutableStateOf(false) }
 
-    // --- Estados de Permisos ---
     var hasLocationPermission by remember {
         mutableStateOf(checkLocationPermission(context))
     }
 
-    // --- Feedback del ViewModel ---
-    // CORRECCIÓN: Usar collectAsState para observar los StateFlow del ViewModel
     val saveSuccess by viewModel.saveSuccess.collectAsState()
     val saveError by viewModel.saveError.collectAsState()
     val isSaving by viewModel.isSaving.collectAsState()
@@ -82,8 +90,8 @@ fun DenunciaFotograficaScreen(
     // Efecto para manejar el éxito y el error
     LaunchedEffect(saveSuccess, saveError) {
         if (saveSuccess) {
-            onSuccess() // Navega o muestra éxito
-            viewModel.resetStates() // Limpiar después de la navegación
+            onSuccess()
+            viewModel.resetStates()
         }
 
         saveError?.let { errorMsg ->
@@ -91,7 +99,6 @@ fun DenunciaFotograficaScreen(
                 message = errorMsg,
                 actionLabel = "OK"
             )
-            // Limpiar el error después de mostrar
             viewModel.resetStates()
         }
     }
@@ -103,11 +110,9 @@ fun DenunciaFotograficaScreen(
             hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
 
-            // Si el permiso fue concedido, intenta obtener la ubicación.
             if (hasLocationPermission) {
                 isLoadingLocation = true
                 getCurrentLocation(context, fusedLocationClient) { latLng ->
-                    // Mueve la cámara al lugar actual después de obtener la ubicación.
                     currentCameraPosition = CameraPosition.fromLatLngZoom(latLng, DefaultZoom)
                     selectedMarkerLocation = latLng
                     location = getAddressFromLatLng(context, latLng)
@@ -142,27 +147,30 @@ fun DenunciaFotograficaScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Denuncia Fotográfica", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Denuncia Fotográfica", fontWeight = FontWeight.Bold, color = onSurfaceColor)
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor
                 ),
                 actions = {
                     TextButton(onClick = onCancel) {
-                        Text("Cancelar", color = RedCancelButton, fontWeight = FontWeight.Bold)
+                        Text("Cancelar", color = errorColor, fontWeight = FontWeight.Bold)
                     }
                 }
             )
         },
-        snackbarHost = { SnackbarHost(snackbarHostState) }, // <--- Se añade el SnackbarHost
-        containerColor = Color.White
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .background(backgroundColor),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -172,8 +180,10 @@ fun DenunciaFotograficaScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                    .border(1.dp, WireframeGray, RoundedCornerShape(8.dp)),
+                    // CORRECCIÓN 6: Usar surfaceVariant para el fondo de placeholder
+                    .background(surfaceVariantColor, RoundedCornerShape(8.dp))
+                    // CORRECCIÓN 7: Usar outline color para el borde
+                    .border(1.dp, outlineColor, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (selectedImageUri == null) {
@@ -182,68 +192,73 @@ fun DenunciaFotograficaScreen(
                             imageVector = Icons.Default.Image,
                             contentDescription = "Placeholder de imagen",
                             modifier = Modifier.size(60.dp),
-                            tint = WireframeGray
+                            // CORRECCIÓN 8: Usar onSurfaceVariant para iconos sutiles
+                            tint = onSurfaceVariantColor
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Imagen a subir", color = WireframeGray)
+                        // CORRECCIÓN 9: Usar onSurfaceVariant para texto sutil
+                        Text("Imagen a subir", color = onSurfaceVariantColor)
                     }
                 } else {
-                    Text("Imagen seleccionada", color = Color.DarkGray)
+                    // CORRECCIÓN 10: Usar onSurfaceColor para texto principal
+                    Text("Imagen seleccionada", color = onSurfaceColor)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            // --- Botones para Seleccionar Imagen (Simulación) ---
+            // --- Botones para Seleccionar Imagen ---
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
-                    onClick = { selectedImageUri = "simulated_camera_uri_${System.currentTimeMillis()}" }, // Simulación
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    onClick = { selectedImageUri = "simulated_camera_uri_${System.currentTimeMillis()}" },
+                    // CORRECCIÓN 11: Usar surfaceVariant para botones de media/secundarios
+                    colors = ButtonDefaults.buttonColors(containerColor = surfaceVariantColor),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp), tint = onSurfaceColor)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cámara")
+                    Text("Cámara", color = onSurfaceColor)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(
-                    onClick = { selectedImageUri = "simulated_gallery_uri_${System.currentTimeMillis()}" }, // Simulación
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    onClick = { selectedImageUri = "simulated_gallery_uri_${System.currentTimeMillis()}" },
+                    // CORRECCIÓN 12: Usar surfaceVariant para botones de media/secundarios
+                    colors = ButtonDefaults.buttonColors(containerColor = surfaceVariantColor),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp), tint = onSurfaceColor)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Galería")
+                    Text("Galería", color = onSurfaceColor)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Campo "Describe el hecho" ---
-            LabelText("Describe el hecho")
+            LabelText("Describe el hecho", color = onSurfaceColor)
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                placeholder = { Text("Escribe aquí los detalles del hecho", color = WireframeGray) },
+                placeholder = { Text("Escribe aquí los detalles del hecho", color = onSurfaceVariantColor) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 100.dp),
                 maxLines = 5,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = outlineColor,
+                    focusedPlaceholderColor = onSurfaceVariantColor,
+                    unfocusedPlaceholderColor = onSurfaceVariantColor
                 )
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // --- Campo "Ubicación del hecho" (con botón de GPS y Mapa) ---
-            LabelText("Ubicación del hecho")
+            LabelText("Ubicación del hecho", color = onSurfaceColor)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -251,28 +266,30 @@ fun DenunciaFotograficaScreen(
                 OutlinedTextField(
                     value = location,
                     onValueChange = { location = it },
-                    placeholder = { Text("Ubicación actual o seleccionada", color = WireframeGray) },
+                    placeholder = { Text("Ubicación actual o seleccionada", color = onSurfaceVariantColor) },
                     modifier = Modifier
                         .weight(1f),
                     readOnly = false,
                     trailingIcon = {
-                        // Botón para obtener la ubicación actual (GPS)
                         IconButton(onClick = {
                             requestLocationAndUpdate()
                         }, enabled = !isLoadingLocation) {
                             if (isLoadingLocation) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
+                                    strokeWidth = 2.dp,
+                                    color = primaryColor
                                 )
                             } else {
-                                Icon(Icons.Default.LocationOn, contentDescription = "Obtener GPS", tint = WireframeGray)
+                                Icon(Icons.Default.LocationOn, contentDescription = "Obtener GPS", tint = primaryColor)
                             }
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WireframeGray,
-                        unfocusedBorderColor = Color.LightGray
+                        focusedBorderColor = primaryColor,
+                        unfocusedBorderColor = outlineColor,
+                        focusedPlaceholderColor = onSurfaceVariantColor,
+                        unfocusedPlaceholderColor = onSurfaceVariantColor
                     )
                 )
 
@@ -282,23 +299,22 @@ fun DenunciaFotograficaScreen(
                 Button(
                     onClick = {
                         showMapDialog = true
-                        // Si no hay marcador, inicia en la última ubicación conocida
                         if (selectedMarkerLocation == null) {
                             requestLocationAndUpdate()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    colors = ButtonDefaults.buttonColors(containerColor = surfaceVariantColor),
                     shape = RoundedCornerShape(8.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                 ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Mapa", tint = Color.White)
+                    Icon(Icons.Default.LocationOn, contentDescription = "Mapa", tint = onSurfaceColor)
                 }
             }
 
             if (!hasLocationPermission && location.contains("denegado")) {
                 Text(
                     "Pulsa el botón de GPS para solicitar permisos de ubicación.",
-                    color = RedCancelButton,
+                    color = errorColor,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -307,11 +323,11 @@ fun DenunciaFotograficaScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Texto descriptivo (Lorem Ipsum) ---
+            // --- Texto descriptivo ---
             Text(
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum",
+                text = "Los campos marcados con * son obligatorios. Asegúrese de proporcionar la información de la ubicación de la forma más precisa posible para facilitar la búsqueda.",
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = onSurfaceVariantColor,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 8.dp)
@@ -322,7 +338,6 @@ fun DenunciaFotograficaScreen(
             // --- Botón "Guardar" ---
             Button(
                 onClick = {
-                    // 2. Llamada al ViewModel con los datos del formulario
                     viewModel.submitDenuncia(
                         description = description,
                         locationAddress = location,
@@ -331,18 +346,22 @@ fun DenunciaFotograficaScreen(
                         imageUri = selectedImageUri
                     )
                 },
-                // Deshabilitar si está guardando
-                enabled = !isSaving && description.isNotBlank() && location.isNotBlank(), // Validación básica
-                colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
+                enabled = !isSaving && description.isNotBlank() && location.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = tertiaryColor),
                 shape = RoundedCornerShape(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
                 if (isSaving) {
-                    CircularProgressIndicator(color = Color.DarkGray, modifier = Modifier.size(24.dp))
+                    CircularProgressIndicator(color = onTertiaryColor, modifier = Modifier.size(24.dp))
                 } else {
-                    Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                    Text(
+                        "Guardar",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = onTertiaryColor
+                    )
                 }
             }
 
@@ -352,7 +371,6 @@ fun DenunciaFotograficaScreen(
 
     // --- Diálogo para mostrar el Mapa interactivo ---
     if (showMapDialog) {
-        // Usando el componente de Diálogo COMPARTIDO
         MapSelectionDialog(
             cameraPosition = currentCameraPosition,
             markerLocation = selectedMarkerLocation,
@@ -373,9 +391,10 @@ fun DenunciaFotograficaScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun DenunciaFotograficaPreview() {
-    DenunciaFotograficaScreen(
-        onCancel = {},
-        onSuccess = {}
-    )
+    MaterialTheme {
+        DenunciaFotograficaScreen(
+            onCancel = {},
+            onSuccess = {}
+        )
+    }
 }
-

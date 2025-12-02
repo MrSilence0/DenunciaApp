@@ -26,9 +26,8 @@ import mx.edu.utng.oic.denunciaapp.ui.screens.DefaultLocation
 import java.io.IOException
 import java.util.Locale
 
-// --- Constantes de Color (Reutilizadas para el Diálogo) ---
-val YellowButton = Color(0xFFFFC107) // Amarillo del botón
-val RedCancelButton = Color(0xFFD32F2F) // Rojo para el botón Cancelar
+val YellowButton = Color(0xFFFFC107)
+val RedCancelButton = Color(0xFFD32F2F)
 
 // --- Componente de Diálogo con el Mapa (Compartido) ---
 @Composable

@@ -46,13 +46,19 @@ fun SosScreen(
     onCallNumber: (String) -> Unit
 ) {
     val emergencyNumbers = listOf(
-        EmergencyContact(1, "Emergencias (General)", "911", Icons.Default.Call, Color(0xFFD32F2F)),
-        EmergencyContact(2, "Policía Federal", "088", Icons.Default.Shield, Color(0xFF1976D2)),
-        EmergencyContact(3, "Cruz Roja", "065", Icons.Default.Favorite, Color(0xFFF44336)),
-        EmergencyContact(4, "Bomberos", "068", Icons.Default.LocalFireDepartment, Color(0xFFFF9800)),
-        EmergencyContact(5, "CENAPRED (Desastres)", "018000041300", Icons.Default.Warning, Color(0xFF388E3C)),
-        EmergencyContact(6, "Denuncia Anónima", "089", Icons.Default.Security, Color(0xFF6A1B9A)),
+        EmergencyContact(1, "Emergencias (General)", "911", Icons.Default.Call, Color(0xFFD32F2F)), // Rojo oscuro
+        EmergencyContact(2, "Policía Federal", "088", Icons.Default.Shield, Color(0xFF1976D2)), // Azul oscuro
+        EmergencyContact(3, "Cruz Roja", "065", Icons.Default.Favorite, Color(0xFFF44336)), // Rojo Cruz Roja
+        EmergencyContact(4, "Bomberos", "068", Icons.Default.LocalFireDepartment, Color(0xFFFF9800)), // Naranja
+        EmergencyContact(5, "CENAPRED (Desastres)", "018000041300", Icons.Default.Warning, Color(0xFF388E3C)), // Verde
+        EmergencyContact(6, "Denuncia Anónima", "089", Icons.Default.Security, Color(0xFF6A1B9A)), // Púrpura
     )
+
+    // --- Colores Dinámicos del Tema ---
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Scaffold(
         topBar = {
@@ -62,7 +68,6 @@ fun SosScreen(
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                // 1. Botón Abrir Menú (Izquierda)
                 IconButton(
                     onClick = onOpenMenu,
                     modifier = Modifier.align(Alignment.CenterStart)
@@ -71,11 +76,10 @@ fun SosScreen(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Abrir menú",
                         modifier = Modifier.size(32.dp),
-                        tint = Color.Black
+                        tint = onSurfaceColor
                     )
                 }
 
-                // 2. Logo de la App (Centro)
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -85,29 +89,35 @@ fun SosScreen(
                         contentDescription = "Logo DenunciaApp",
                         modifier = Modifier.size(40.dp)
                     )
-                    Text("DenunciaApp", fontSize = 10.sp, color = WireframeGray, fontWeight = FontWeight.Bold)
+                    Text(
+                        "DenunciaApp",
+                        fontSize = 10.sp,
+                        color = onSurfaceVariantColor,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Text(
                 text = "Números de Emergencia en México",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.ExtraBold,
-                color = PrimaryColor,
+                color = primaryColor,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
             Text(
                 text = "Toca el botón de llamada para comunicarte inmediatamente.",
                 fontSize = 14.sp,
-                color = WireframeGray,
+                color = onSurfaceVariantColor,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -132,9 +142,14 @@ fun EmergencyItem(
     contact: EmergencyContact,
     onCall: (String) -> Unit
 ) {
+    // --- Colores Dinámicos del Tema ---
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
     Card(
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = surfaceColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier
             .fillMaxWidth()
@@ -147,7 +162,6 @@ fun EmergencyItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // 1. Imagen/Icono (Estética)
             Box(
                 modifier = Modifier
                     .size(56.dp)
@@ -163,7 +177,6 @@ fun EmergencyItem(
                 )
             }
 
-            // 2. Información del Contacto
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -173,13 +186,13 @@ fun EmergencyItem(
                     text = contact.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.Black
+                    color = onSurfaceColor
                 )
                 Text(
                     text = contact.number,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp,
-                    color = PrimaryColor
+                    color = primaryColor
                 )
             }
 
@@ -189,7 +202,7 @@ fun EmergencyItem(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(PrimaryColor)
+                    .background(primaryColor)
             ) {
                 Icon(
                     imageVector = Icons.Default.Call,
@@ -200,7 +213,6 @@ fun EmergencyItem(
         }
     }
 }
-
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

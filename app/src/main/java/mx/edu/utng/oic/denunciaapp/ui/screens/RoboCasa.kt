@@ -30,8 +30,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
-import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.DenunciaAppViewModelFactory // Importar la factoría central
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.RoboCasaViewModel // Importar el ViewModel
 import mx.edu.utng.oic.denunciaapp.ui.utils.MapSelectionDialog
@@ -40,6 +38,10 @@ import mx.edu.utng.oic.denunciaapp.ui.utils.getCurrentLocation
 import mx.edu.utng.oic.denunciaapp.ui.utils.getAddressFromLatLng
 import mx.edu.utng.oic.denunciaapp.ui.utils.RedCancelButton
 import mx.edu.utng.oic.denunciaapp.ui.utils.YellowButton
+
+// Valores constantes
+private val DefaultLocation2 = LatLng(20.940, -100.900)
+private const val DefaultZoom2 = 15f
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,6 +54,12 @@ fun RoboCasaScreen(
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
+    // --- Colores Dinámicos del Tema ---
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
     // --- Observación de Estados del ViewModel ---
     val isSaving by viewModel.isSaving.collectAsState()
     val saveError by viewModel.saveError.collectAsState()
@@ -62,7 +70,7 @@ fun RoboCasaScreen(
     var ubicacion by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
     var confirmarTelefono by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<String?>(null) } // Simulación de URI de imagen
+    var selectedImageUri by remember { mutableStateOf<String?>(null) }
 
     // --- Estado del Mapa y Ubicación ---
     var showMapDialog by remember { mutableStateOf(false) }
@@ -75,21 +83,20 @@ fun RoboCasaScreen(
         mutableStateOf(checkLocationPermission(context))
     }
 
-    // --- Efecto para Navegación en Éxito ---
+    // --- Efecto para Navegación en Éxito y Feedback (Sin cambios relevantes) ---
     LaunchedEffect(saveSuccess) {
         if (saveSuccess) {
-            onNavigateBack() // Vuelve a la pantalla anterior al guardar con éxito
+            onNavigateBack()
             viewModel.resetStates()
         }
     }
 
-    // Launcher para solicitar permisos de ubicación
+    // Launcher y función de permisos (Sin cambios relevantes)
     val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
         onResult = { permissions ->
             hasLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                     permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-
             if (hasLocationPermission) {
                 isLoadingLocation = true
                 getCurrentLocation(context, fusedLocationClient) { latLng ->
@@ -105,7 +112,6 @@ fun RoboCasaScreen(
         }
     )
 
-    // Función para solicitar permisos e intentar obtener ubicación
     fun requestLocationAndUpdate() {
         if (hasLocationPermission) {
             isLoadingLocation = true
@@ -123,33 +129,37 @@ fun RoboCasaScreen(
         }
     }
 
-
+    // --- TopBar y Fondo ---
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Robo a Casa Habitación", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Robo a Casa Habitación", fontWeight = FontWeight.Bold, color = onSurfaceColor)
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor
                 ),
                 actions = {
                     TextButton(
                         onClick = onNavigateBack,
                         enabled = !isSaving
                     ) {
+                        // Se mantiene RedCancelButton (color fijo de utilidad/peligro)
                         Text("Cancelar", color = RedCancelButton, fontWeight = FontWeight.Bold)
                     }
                 }
             )
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(16.dp))
@@ -159,8 +169,8 @@ fun RoboCasaScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
-                    .background(Color.LightGray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                    .border(1.dp, WireframeGray, RoundedCornerShape(8.dp)),
+                    .background(surfaceColor.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 if (selectedImageUri == null) {
@@ -169,13 +179,17 @@ fun RoboCasaScreen(
                             imageVector = Icons.Default.Image,
                             contentDescription = "Placeholder de imagen",
                             modifier = Modifier.size(60.dp),
-                            tint = WireframeGray
+                            tint = onSurfaceVariantColor
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("Foto del lugar (opcional)", color = WireframeGray)
+                        Text(
+                            "Foto del lugar (opcional)",
+                            color = onSurfaceVariantColor
+                        )
                     }
                 } else {
-                    Text("Imagen seleccionada", color = Color.DarkGray)
+                    // CORRECCIÓN 7: Usar color de texto principal dinámico
+                    Text("Imagen seleccionada", color = onSurfaceColor)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -185,56 +199,66 @@ fun RoboCasaScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
+                // Colores para botones secundarios (Cámara/Galería)
+                val secondaryButtonColors = ButtonDefaults.buttonColors(
+                    containerColor = onSurfaceVariantColor.copy(alpha = 0.5f),
+                    contentColor = onSurfaceColor
+                )
+
                 // Botón "Cámara"
                 Button(
                     onClick = { /* Lógica para abrir la cámara */ },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    colors = secondaryButtonColors, // CORRECCIÓN 8
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isSaving,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.CameraAlt, contentDescription = "Tomar foto", modifier = Modifier.size(24.dp), tint = onSurfaceColor)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cámara")
+                    Text("Cámara", color = onSurfaceColor)
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 // Botón "Galería"
                 Button(
-                    onClick = {
-                        // Simulación de adjuntar imagen
-                        selectedImageUri = "file://path/to/image.jpg"
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    onClick = { selectedImageUri = "file://path/to/image.jpg" },
+                    colors = secondaryButtonColors, // CORRECCIÓN 8
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isSaving,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Image, contentDescription = "Seleccionar de galería", modifier = Modifier.size(24.dp), tint = onSurfaceColor)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Galería")
+                    Text("Galería", color = onSurfaceColor)
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- Colores para OutlinedTextFields ---
+            val textFieldColors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = primaryColor,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                focusedTextColor = onSurfaceColor,
+                unfocusedTextColor = onSurfaceColor,
+                focusedPlaceholderColor = onSurfaceVariantColor,
+                unfocusedPlaceholderColor = onSurfaceVariantColor
+            )
+
             // --- Campo "Describe el hecho" ---
-            LabelText("Describe el hecho")
+            LabelText("Describe el hecho",)
             OutlinedTextField(
                 value = descripcion,
                 onValueChange = { descripcion = it },
-                placeholder = { Text("Detalle lo sucedido...", color = WireframeGray) },
+                placeholder = { Text("Detalle lo sucedido...") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isSaving,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
-                )
+                colors = textFieldColors // CORRECCIÓN 9
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             // --- Campo "Ubicación" (Con GPS y Mapa) ---
-            LabelText("Ubicación del Domicilio Robado")
+            LabelText("Ubicación del Domicilio Robado",)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -242,9 +266,8 @@ fun RoboCasaScreen(
                 OutlinedTextField(
                     value = ubicacion,
                     onValueChange = { ubicacion = it },
-                    placeholder = { Text("Ubicación actual o seleccionada", color = WireframeGray) },
-                    modifier = Modifier
-                        .weight(1f),
+                    placeholder = { Text("Ubicación actual o seleccionada") },
+                    modifier = Modifier.weight(1f),
                     readOnly = false,
                     enabled = !isSaving,
                     trailingIcon = {
@@ -255,17 +278,15 @@ fun RoboCasaScreen(
                             if (isLoadingLocation) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(24.dp),
-                                    strokeWidth = 2.dp
+                                    strokeWidth = 2.dp,
+                                    color = primaryColor // CORRECCIÓN 10: Color dinámico
                                 )
                             } else {
-                                Icon(Icons.Default.LocationOn, contentDescription = "Obtener GPS", tint = WireframeGray)
+                                Icon(Icons.Default.LocationOn, contentDescription = "Obtener GPS", tint = primaryColor)
                             }
                         }
                     },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WireframeGray,
-                        unfocusedBorderColor = Color.LightGray
-                    )
+                    colors = textFieldColors // CORRECCIÓN 9
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -274,24 +295,23 @@ fun RoboCasaScreen(
                 Button(
                     onClick = {
                         showMapDialog = true
-                        // Si no hay marcador, inicia en la última ubicación conocida
                         if (selectedMarkerLocation == null) {
                             requestLocationAndUpdate()
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Gray),
+                    colors = ButtonDefaults.buttonColors(containerColor = primaryColor), // CORRECCIÓN 12: Usar color primario
                     shape = RoundedCornerShape(8.dp),
                     enabled = !isSaving,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
                 ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Mapa", tint = Color.White)
+                    Icon(Icons.Default.LocationOn, contentDescription = "Mapa", tint = MaterialTheme.colorScheme.onPrimary)
                 }
             }
 
             if (!hasLocationPermission && ubicacion.contains("denegado")) {
                 Text(
                     "Pulsa el botón de GPS para solicitar permisos de ubicación.",
-                    color = RedCancelButton,
+                    color = RedCancelButton, // Se mantiene el color de alerta fijo
                     fontSize = 12.sp,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -300,50 +320,40 @@ fun RoboCasaScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             // --- Campo "Teléfono de contacto" ---
-            LabelText("Teléfono de contacto")
+            LabelText("Teléfono de contacto",)
             OutlinedTextField(
                 value = telefono,
                 onValueChange = {
-                    if (it.length <= 10) {
-                        telefono = it.filter { char -> char.isDigit() }
-                    }
+                    if (it.length <= 10) { telefono = it.filter { char -> char.isDigit() } }
                 },
-                placeholder = { Text("Número a 10 dígitos", color = WireframeGray) },
+                placeholder = { Text("Número a 10 dígitos") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isSaving,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
-                )
+                colors = textFieldColors // CORRECCIÓN 9
             )
             Spacer(modifier = Modifier.height(16.dp))
 
             // --- Campo "Confirmar teléfono" ---
-            LabelText("Confirmar teléfono")
+            LabelText("Confirmar teléfono",)
             OutlinedTextField(
                 value = confirmarTelefono,
                 onValueChange = {
-                    if (it.length <= 10) {
-                        confirmarTelefono = it.filter { char -> char.isDigit() }
-                    }
+                    if (it.length <= 10) { confirmarTelefono = it.filter { char -> char.isDigit() } }
                 },
-                placeholder = { Text("Repita el número", color = WireframeGray) },
+                placeholder = { Text("Repita el número") },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isSaving,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = WireframeGray,
-                    unfocusedBorderColor = Color.LightGray
-                )
+                colors = textFieldColors // CORRECCIÓN 9
             )
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Texto descriptivo (Lorem Ipsum) ---
+            // --- Texto descriptivo ---
             Text(
                 text = "La ubicación es crucial para la investigación. Puede usar el GPS para su ubicación actual o el mapa para señalar la dirección exacta del domicilio robado.",
                 fontSize = 12.sp,
-                color = Color.Gray,
+                color = onSurfaceVariantColor, // CORRECCIÓN 14: Usar color secundario/sutil
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
             )
 
@@ -353,15 +363,10 @@ fun RoboCasaScreen(
             Button(
                 onClick = {
                     viewModel.submitDenuncia(
-                        descripcion = descripcion,
-                        locationAddress = ubicacion,
-                        latitud = selectedMarkerLocation?.latitude,
-                        longitud = selectedMarkerLocation?.longitude,
-                        telefono = telefono,
-                        confirmarTelefono = confirmarTelefono
+                        descripcion = descripcion, locationAddress = ubicacion, latitud = selectedMarkerLocation?.latitude,
+                        longitud = selectedMarkerLocation?.longitude, telefono = telefono, confirmarTelefono = confirmarTelefono
                     )
                 },
-                // Habilitado si no está guardando y los campos obligatorios están llenos
                 enabled = !isSaving && descripcion.isNotBlank() && ubicacion.isNotBlank() && telefono.isNotBlank() && confirmarTelefono.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = YellowButton),
                 shape = RoundedCornerShape(8.dp),
@@ -370,8 +375,10 @@ fun RoboCasaScreen(
                     .height(50.dp)
             ) {
                 if (isSaving) {
+                    // El color del indicador debe contrastar con YellowButton (usar un color oscuro fijo es aceptable)
                     CircularProgressIndicator(color = Color.DarkGray, modifier = Modifier.size(24.dp))
                 } else {
+                    // El color del texto debe contrastar con YellowButton
                     Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.DarkGray)
                 }
             }
@@ -380,7 +387,7 @@ fun RoboCasaScreen(
         }
     }
 
-    // --- Diálogo para mostrar el Mapa interactivo (Componente Compartido) ---
+    // --- Diálogo para mostrar el Mapa interactivo ---
     if (showMapDialog) {
         MapSelectionDialog(
             cameraPosition = currentCameraPosition,
@@ -388,7 +395,6 @@ fun RoboCasaScreen(
             onDismiss = { showMapDialog = false },
             onLocationConfirmed = { latLng ->
                 selectedMarkerLocation = latLng
-                // Actualiza la ubicación en el TextField
                 ubicacion = getAddressFromLatLng(context, latLng)
                 currentCameraPosition = CameraPosition.fromLatLngZoom(latLng, DefaultZoom)
                 showMapDialog = false
@@ -399,17 +405,18 @@ fun RoboCasaScreen(
         )
     }
 
-    // --- Diálogo de Error ---
+    // --- Diálogo de Error (Asegurar que use colores del tema) ---
     saveError?.let { message ->
         AlertDialog(
             onDismissRequest = { viewModel.resetStates() },
-            title = { Text("Error al Enviar Reporte") },
-            text = { Text(message) },
+            title = { Text("Error al Enviar Reporte", color = onSurfaceColor) },
+            text = { Text(message, color = onSurfaceVariantColor) },
             confirmButton = {
                 Button(onClick = { viewModel.resetStates() }) {
                     Text("Aceptar")
                 }
-            }
+            },
+            containerColor = surfaceColor
         )
     }
 }
@@ -417,6 +424,5 @@ fun RoboCasaScreen(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun RoboCasaPreview() {
-    // Se usa el constructor por defecto para el preview
     RoboCasaScreen(onNavigateBack = {})
 }

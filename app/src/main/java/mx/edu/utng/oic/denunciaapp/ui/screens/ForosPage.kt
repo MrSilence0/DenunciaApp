@@ -1,6 +1,6 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
-import androidx.compose.foundation.Image // Nuevo import
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,35 +16,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.res.painterResource // Nuevo import
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
-import mx.edu.utng.oic.denunciaapp.R // Nuevo import
+import mx.edu.utng.oic.denunciaapp.R
 import mx.edu.utng.oic.denunciaapp.data.model.Foro as ForoModel
 import mx.edu.utng.oic.denunciaapp.data.service.ForoService
 import mx.edu.utng.oic.denunciaapp.data.service.UserService
+import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray // Mantener si WireframeGray es necesario para placeholders
+import mx.edu.utng.oic.denunciaapp.ui.theme.White
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.ForoViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.ForoViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// --- Definiciones de Colores y Constantes ---
-val FABColor = Color(0xFFFFC107) // Amarillo para el FAB
-val CardBackground = Color(0xFFF0F0F0) // Fondo de tarjeta
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForosPageScreen(
     onNavigateToCreateForum: () -> Unit,
     onNavigateTo: (String) -> Unit,
-    onOpenMenu: () -> Unit // ⬅️ Añadido el callback para abrir el menú
+    onOpenMenu: () -> Unit
 ) {
-    // --- 1. Inicializar ViewModel y Observar Estados ---
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val onTertiaryColor = MaterialTheme.colorScheme.onTertiary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val backgroundColor = MaterialTheme.colorScheme.background
+
     val foroService = remember { ForoService() }
     val userService = remember { UserService() }
     val factory = remember { ForoViewModelFactory(foroService, userService) }
@@ -68,7 +72,6 @@ fun ForosPageScreen(
         }
     }
 
-    // 3. Cargar Foros
     LaunchedEffect(Unit) {
         viewModel.loadForos()
     }
@@ -77,26 +80,23 @@ fun ForosPageScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            // Reemplazado TopAppBar por un Box personalizado para incluir el menú y el logo
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .background(surfaceColor)
                     .padding(16.dp)
             ) {
-                // 1. Botón Abrir Menú (Izquierda)
                 IconButton(
-                    onClick = onOpenMenu, // ⬅️ Usa el nuevo callback
+                    onClick = onOpenMenu,
                     modifier = Modifier.align(Alignment.CenterStart)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Menu,
                         contentDescription = "Abrir menú",
                         modifier = Modifier.size(32.dp),
-                        tint = Color.Black
+                        tint = onSurfaceColor
                     )
                 }
-
-                // 2. Logo de la App (Centro)
                 Column(
                     modifier = Modifier.align(Alignment.Center),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -106,50 +106,37 @@ fun ForosPageScreen(
                         contentDescription = "Logo DenunciaApp",
                         modifier = Modifier.size(50.dp)
                     )
-                    Text("Foros", fontSize = 10.sp, color = PrimaryBlue, fontWeight = FontWeight.Bold)
-                }
-
-                // 3. Botón de Búsqueda (Derecha) - Mantenido de la versión anterior
-                IconButton(
-                    onClick = { /* Lógica de búsqueda */ },
-                    modifier = Modifier.align(Alignment.CenterEnd)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar foro",
-                        modifier = Modifier.size(32.dp),
-                        tint = Color.Black
-                    )
+                    Text("DenunciaApp", fontSize = 10.sp, color = White, fontWeight = FontWeight.Bold)
                 }
             }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavigateToCreateForum,
-                containerColor = FABColor,
+                containerColor = tertiaryColor,
                 shape = CircleShape,
                 modifier = Modifier.size(56.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Nuevo tema",
-                    tint = Color.Black
+                    tint = onTertiaryColor
                 )
             }
         },
-        containerColor = Color.White
+        containerColor = backgroundColor
     ) { paddingValues ->
 
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = primaryColor)
             }
             return@Scaffold
         }
 
         if (forosList.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
-                Text("No hay foros disponibles. ¡Sé el primero en crear uno!")
+                Text("No hay foros disponibles. ¡Sé el primero en crear uno!", color = onSurfaceColor)
             }
             return@Scaffold
         }
@@ -157,7 +144,8 @@ fun ForosPageScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .background(backgroundColor),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -172,26 +160,38 @@ fun ForosPageScreen(
                     },
                     onClick = {
                         onNavigateTo("messages_page_screen/${foro.id}")
-                    }
+                    },
+                    primaryColor = primaryColor,
+                    onSurfaceColor = onSurfaceColor,
+                    onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant,
+                    outlineColor = MaterialTheme.colorScheme.outline
                 )
             }
         }
     }
 }
 
-// --- Componente de Item de Foro Individual (Sin cambios sustanciales, solo color) ---
 @Composable
 fun ForumItem(
     foro: ForoModel,
     currentUserId: String?,
     onDelete: (String) -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    primaryColor: Color,
+    onSurfaceColor: Color,
+    onSurfaceVariantColor: Color,
+    surfaceVariantColor: Color,
+    outlineColor: Color
 ) {
     val isOwner = foro.idUser == currentUserId
 
+    val deleteIconColor = Color(0xFFD32F2F)
+    val deleteContainerColor = Color(0xFFF44336).copy(alpha = 0.1f)
+
     Card(
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(containerColor = surfaceVariantColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -201,20 +201,18 @@ fun ForumItem(
                 .padding(16.dp)
         ) {
 
-            // --- 1. Contenido principal y meta data ---
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Icono de Foro (Izquierda)
                 Box(
                     modifier = Modifier
                         .size(48.dp)
                         .clip(CircleShape)
-                        .background(Color.Gray.copy(alpha = 0.5f)),
+                        .background(primaryColor.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Forum,
                         contentDescription = "Icono de foro",
-                        tint = Color.White,
+                        tint = primaryColor,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -229,7 +227,7 @@ fun ForumItem(
                         text = foro.tema,
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
-                        color = PrimaryBlue,
+                        color = onSurfaceColor,
                         maxLines = 2
                     )
                     Spacer(modifier = Modifier.height(4.dp))
@@ -239,14 +237,14 @@ fun ForumItem(
                         Icon(
                             imageVector = Icons.Default.Person,
                             contentDescription = "Autor",
-                            tint = WireframeGray,
+                            tint = onSurfaceVariantColor,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Autor: ${foro.username}",
                             fontSize = 12.sp,
-                            color = WireframeGray
+                            color = onSurfaceVariantColor
                         )
                     }
                 }
@@ -256,14 +254,14 @@ fun ForumItem(
                 Text(
                     text = dateFormatter.format(foro.creationDate),
                     fontSize = 12.sp,
-                    color = Color.DarkGray,
+                    color = onSurfaceVariantColor,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(start = 16.dp)
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-            Divider(color = Color.LightGray)
+            Divider(color = outlineColor)
             Spacer(modifier = Modifier.height(12.dp))
 
             // --- 2. Pie de la tarjeta: Respuestas y Botón Responder/Borrar ---
@@ -277,7 +275,7 @@ fun ForumItem(
                     text = "${foro.responseCount} respuestas",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp,
-                    color = PrimaryBlue
+                    color = primaryColor
                 )
 
                 // Botones de Acción
@@ -289,12 +287,13 @@ fun ForumItem(
                             modifier = Modifier
                                 .size(36.dp)
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(Color(0xFFF44336).copy(alpha = 0.1f)) // Rojo claro
+                                // Se mantienen los colores fijos para el botón de ELIMINAR (rojo)
+                                .background(deleteContainerColor)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 contentDescription = "Eliminar Foro",
-                                tint = Color(0xFFD32F2F) // Rojo oscuro
+                                tint = deleteIconColor
                             )
                         }
                     }
@@ -304,18 +303,18 @@ fun ForumItem(
                         onClick = onClick,
                         shape = RoundedCornerShape(8.dp),
                         border = ButtonDefaults.outlinedButtonBorder.copy(
-                            brush = SolidColor(PrimaryBlue)
+                            brush = SolidColor(primaryColor)
                         )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Send,
                             contentDescription = "Responder",
                             modifier = Modifier.size(18.dp).padding(end = 4.dp),
-                            tint = PrimaryBlue
+                            tint = primaryColor
                         )
                         Text(
                             "Responder",
-                            color = PrimaryBlue,
+                            color = primaryColor,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -328,10 +327,11 @@ fun ForumItem(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ForosPageScreenPreview() {
-    // Para el Preview, necesitamos simular el callback onOpenMenu
-    ForosPageScreen(
-        onNavigateToCreateForum = {},
-        onNavigateTo = {},
-        onOpenMenu = {} // Simulación
-    )
+    MaterialTheme {
+        ForosPageScreen(
+            onNavigateToCreateForum = {},
+            onNavigateTo = {},
+            onOpenMenu = {}
+        )
+    }
 }

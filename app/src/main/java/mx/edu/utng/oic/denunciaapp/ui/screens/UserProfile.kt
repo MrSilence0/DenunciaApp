@@ -1,19 +1,10 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -24,13 +15,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import mx.edu.utng.oic.denunciaapp.data.model.User
@@ -40,62 +28,42 @@ import mx.edu.utng.oic.denunciaapp.ui.viewmodel.UserProfileViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ⚠️ IMPORTACIONES DE MAPS ELIMINADAS
-
 // ⚠️ IMPORTAR LAS FUNCIONES COMUNES DE TU PAQUETE:
 import mx.edu.utng.oic.denunciaapp.ui.components.GenderOption
 import mx.edu.utng.oic.denunciaapp.ui.components.ImagePlaceholder
-import mx.edu.utng.oic.denunciaapp.ui.components.LabelText
 import mx.edu.utng.oic.denunciaapp.ui.components.OutlinedTextFieldWithDialog
 import mx.edu.utng.oic.denunciaapp.ui.components.SimpleOutlinedTextField
-import mx.edu.utng.oic.denunciaapp.ui.components.WireframeGray
-
 
 val HeaderBlue = Color(0xFF42A5F5)
+val HeaderDarkBlue = Color(0xFF1976D2)
 val StarYellow = Color(0xFFFFCC00)
 val StarGray = Color(0xFFE0E0E0)
+val SuccessGreen = Color(0xFF4CAF50)
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserProfileScreen(
     onNavigateBack: () -> Unit
 ) {
-    // --- 1. Inicializar ViewModel y Factory ---
     val userService = remember { UserService() }
     val factory = remember { UserProfileViewModelFactory(userService) }
     val viewModel: UserProfileViewModel = viewModel(factory = factory)
 
-    // --- 2. Observar Estados del ViewModel ---
     val user: User = viewModel.userState
     val isLoading = viewModel.isLoading
     val isSaving = viewModel.isSaving
     val feedbackMessage = viewModel.feedbackMessage
 
-    // --- 3. Estados de Lógica de UI ---
     var showPhotoDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
-    // ESTADO ELIMINADO: var showMapSelection by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    // val context = LocalContext.current // No se usa si se elimina la ubicación
 
-    // --- ESTADO LOCAL ELIMINADO: Dirección ---
-    // var addressState by remember(user.idUser) { mutableStateOf("Calle y número, Colonia, Ciudad") }
-    // LaunchedEffect(user.descripcion) {
-    //     if (user.descripcion.isNotEmpty() && addressState == "Calle y número, Colonia, Ciudad") {
-    //         addressState = user.descripcion
-    //     }
-    // }
-
-
-    // --- 4. Manejo de Permisos de Ubicación (LÓGICA ELIMINADA) ---
-    // val locationPermissionLauncher = rememberLauncherForActivityResult(...)
-    // val checkAndRequestLocation = { ... }
-
-
-    // --- 5. Manejo de Mensajes (Snackbar) ---
+    // --- 4. Manejo de Mensajes (Snackbar) ---
     LaunchedEffect(feedbackMessage) {
         if (feedbackMessage != null) {
             scope.launch {
@@ -109,6 +77,7 @@ fun UserProfileScreen(
     // --- Contenido Principal ---
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             // Encabezado con Logout/Guardar y la Imagen
             Box(
@@ -119,18 +88,17 @@ fun UserProfileScreen(
             ) {
                 // Botones de ACCIÓN
                 Row(
-                    // ⚠️ CAMBIO CLAVE: Alineamos el Row a TopStart y usamos padding para separarlo de los bordes.
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .fillMaxWidth() // Necesario para que el Spacer funcione
+                        .fillMaxWidth()
                         .padding(top = 16.dp, start = 16.dp, end = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // 1. Botón de REGRESAR (Alineado a la IZQUIERDA)
+                    // 1. Botón de REGRESAR
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .background(Color(0xFF1976D2), CircleShape) // Azul más oscuro
+                            .background(HeaderDarkBlue, CircleShape)
                             .clickable { onNavigateBack() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -142,16 +110,14 @@ fun UserProfileScreen(
                         )
                     }
 
-                    // ⚠️ SPACER: Empuja todo lo que sigue (el botón Guardar) hacia la derecha.
                     Spacer(Modifier.weight(1f))
 
-                    // 2. Botón de GUARDAR (Alineado a la DERECHA)
+                    // 2. Botón de GUARDAR
                     if (!user.isAnonymus && !isLoading) {
                         Button(
                             onClick = viewModel::saveUserProfile,
                             enabled = !isSaving,
-                            // Hacemos el botón compacto y le damos un color de éxito
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)), // Verde vibrante
+                            colors = ButtonDefaults.buttonColors(containerColor = SuccessGreen),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
                         ) {
                             Icon(
@@ -168,9 +134,9 @@ fun UserProfileScreen(
                             )
                         }
                     }
-                } // Fin del Row de botones
+                }
 
-                // Placeholder de la Imagen de Perfil (Sin cambios)
+                // Placeholder de la Imagen de Perfil
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -180,7 +146,7 @@ fun UserProfileScreen(
                 ) {
                     ImagePlaceholder(
                         size = 100.dp,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.surface,
                         shape = CircleShape,
                         borderColor = HeaderBlue,
                         borderWidth = 3.dp
@@ -188,7 +154,7 @@ fun UserProfileScreen(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Foto de perfil",
-                        tint = HeaderBlue,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
                             .size(70.dp)
                             .align(Alignment.Center)
@@ -196,12 +162,11 @@ fun UserProfileScreen(
                 }
             }
         },
-        containerColor = Color.White
     ) { paddingValues ->
 
         if (isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier.fillMaxSize().padding(paddingValues).background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
             return@Scaffold
@@ -212,15 +177,16 @@ fun UserProfileScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
-            // --- Columna 1: Información Personal ---
             Column(horizontalAlignment = Alignment.Start) {
                 // Nombre
-                LabelText("Nombre")
+                LabelText("Nombre",)
+
                 SimpleOutlinedTextField(
                     value = user.nombre,
                     onValueChange = { viewModel.onUserFieldChange(user.copy(nombre = it)) },
@@ -229,7 +195,6 @@ fun UserProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Género
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -244,7 +209,7 @@ fun UserProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Teléfono
-                LabelText("Teléfono")
+                LabelText("Teléfono",)
                 SimpleOutlinedTextField(
                     value = user.telefono,
                     onValueChange = { viewModel.onUserFieldChange(user.copy(telefono = it)) },
@@ -254,8 +219,7 @@ fun UserProfileScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Fecha de Nacimiento (con DatePicker)
-                LabelText("Fecha de nacimiento")
+                LabelText("Fecha de nacimiento",)
                 OutlinedTextFieldWithDialog(
                     value = user.fechaNacimiento,
                     placeholder = "",
@@ -265,7 +229,7 @@ fun UserProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Correo electrónico
-                LabelText("Correo electrónico")
+                LabelText("Correo electrónico",)
                 SimpleOutlinedTextField(
                     value = user.correoElectronico,
                     onValueChange = { viewModel.onUserFieldChange(user.copy(correoElectronico = it)) },
@@ -277,31 +241,34 @@ fun UserProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
             }
-            // Separador (Ajustado si eliminaste el anterior)
+
             Spacer(modifier = Modifier.height(32.dp))
 
-            // --- Columna 2: Descripción y Puntos de Respeto ---
             Column(horizontalAlignment = Alignment.Start) {
                 // Descripción/Bio
-                LabelText("Descripción")
+                LabelText("Descripción",)
                 OutlinedTextField(
                     value = user.descripcion,
                     onValueChange = { viewModel.onUserFieldChange(user.copy(descripcion = it)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 100.dp),
-                    placeholder = { Text("Inserte una descripción", color = WireframeGray) },
+                    placeholder = {
+                        Text(
+                            "Inserte una descripción",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
                     maxLines = 5,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = WireframeGray,
-                        unfocusedBorderColor = Color.LightGray
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
                     )
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Puntos de Respeto
-                LabelText("Puntos de respeto")
+                LabelText("Puntos de respeto",)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Start
@@ -311,7 +278,7 @@ fun UserProfileScreen(
                         Icon(
                             imageVector = if (isFilled) Icons.Default.Star else Icons.Outlined.StarBorder,
                             contentDescription = "Estrella de respeto",
-                            tint = if (isFilled) StarYellow else StarGray,
+                            tint = if (isFilled) StarYellow else StarGray, // Colores fijos para estrellas
                             modifier = Modifier
                                 .size(36.dp)
                         )
@@ -325,11 +292,10 @@ fun UserProfileScreen(
 
     // --- Diálogos y Pop-ups ---
 
-    // 1. Diálogo de Selección de Foto (Sin cambios)
     if (showPhotoDialog) {
         AlertDialog(
             onDismissRequest = { showPhotoDialog = false },
-            title = { Text(user.nombre, fontWeight = FontWeight.Bold) },
+            title = { Text(user.nombre, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Column {
                     Row(
@@ -339,11 +305,11 @@ fun UserProfileScreen(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Abrir camara", fontSize = 16.sp)
+                        Text("Abrir camara", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.Menu, contentDescription = null, tint = WireframeGray)
+                        Icon(Icons.Default.Menu, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Divider()
+                    Divider(color = MaterialTheme.colorScheme.outlineVariant) // Usar un color de tema para la división
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -351,9 +317,9 @@ fun UserProfileScreen(
                             .padding(vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Abrir Galeria", fontSize = 16.sp)
+                        Text("Abrir Galeria", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.Menu, contentDescription = null, tint = WireframeGray)
+                        Icon(Icons.Default.Menu, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             },
@@ -361,7 +327,6 @@ fun UserProfileScreen(
         )
     }
 
-    // 2. Lógica del Pop-up de Calendario (Sin cambios)
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -374,12 +339,12 @@ fun UserProfileScreen(
                     }
                     showDatePicker = false
                 }) {
-                    Text("OK", color = HeaderBlue)
+                    Text("OK", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar", color = HeaderBlue)
+                    Text("Cancelar", color = MaterialTheme.colorScheme.primary)
                 }
             }
         ) {
@@ -387,12 +352,3 @@ fun UserProfileScreen(
         }
     }
 }
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun UserProfileScreenPreview() {
-    UserProfileScreen(
-        onNavigateBack = {}
-    )
-}
-

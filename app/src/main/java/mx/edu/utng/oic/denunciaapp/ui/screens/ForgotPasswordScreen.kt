@@ -12,32 +12,40 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 
-// Color gris oscuro para el botón de enviar
-val RecoveryButtonColor = Color(0xFF616161)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForgotPasswordScreen(
     onNavigateBack: () -> Unit
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val primaryColor = colorScheme.primary
+    val onPrimaryColor = colorScheme.onPrimary
+    val surfaceColor = colorScheme.surface
+    val onSurfaceColor = colorScheme.onSurface
+    val backgroundColor = colorScheme.background
+    val onSurfaceVariantColor = colorScheme.onSurfaceVariant
+
     var email by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recuperar Contraseña") },
+                title = {
+                    Text("Recuperar Contraseña", color = onSurfaceColor)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = onSurfaceColor)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.DarkGray
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor,
+                    navigationIconContentColor = onSurfaceColor
                 )
             )
         },
-        containerColor = Color.White
+        containerColor = backgroundColor
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -50,7 +58,7 @@ fun ForgotPasswordScreen(
 
             Text(
                 text = "Ingresa tu correo electrónico para enviarte un enlace de recuperación.",
-                color = Color.Gray,
+                color = onSurfaceVariantColor,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             )
 
@@ -61,24 +69,32 @@ fun ForgotPasswordScreen(
                 label = { Text("Correo Electrónico") },
                 placeholder = { Text("ejemplo@correo.com") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = primaryColor,
+                    unfocusedBorderColor = onSurfaceVariantColor.copy(alpha = 0.5f),
+                    focusedLabelColor = primaryColor,
+                    unfocusedLabelColor = onSurfaceColor.copy(alpha = 0.6f),
+                    focusedTextColor = onSurfaceColor,
+                    unfocusedTextColor = onSurfaceColor
+                )
             )
 
             Spacer(modifier = Modifier.height(40.dp))
 
-            // Botón Enviar (Placeholder de acción)
+            // Botón Enviar
             Button(
                 onClick = {
                     // Lógica de envío de correo (placeholder)
-                    onNavigateBack() // Vuelve a la pantalla anterior después del intento de envío
+                    onNavigateBack()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
                 shape = MaterialTheme.shapes.small,
-                colors = ButtonDefaults.buttonColors(containerColor = RecoveryButtonColor)
+                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
             ) {
-                Text("Enviar Enlace", fontWeight = FontWeight.Bold)
+                Text("Enviar Enlace", fontWeight = FontWeight.Bold, color = onPrimaryColor)
             }
         }
     }
@@ -87,5 +103,7 @@ fun ForgotPasswordScreen(
 @Preview(showBackground = true)
 @Composable
 fun ForgotPasswordScreenPreview() {
-    ForgotPasswordScreen(onNavigateBack = {})
+    MaterialTheme {
+        ForgotPasswordScreen(onNavigateBack = {})
+    }
 }

@@ -1,8 +1,5 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
-// ------------------------------------------------------------------
-// IMPORTS
-// ------------------------------------------------------------------
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -10,7 +7,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.firestore.FirebaseFirestore
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MisDenunciasViewModel
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.MisDenunciasViewModelFactory
-import mx.edu.utng.oic.denunciaapp.data.model.* // Importamos todo el modelo para Denuncia
+import mx.edu.utng.oic.denunciaapp.data.model.*
 import mx.edu.utng.oic.denunciaapp.data.model.Denuncia as DomainDenuncia
 import java.text.SimpleDateFormat
 
@@ -32,12 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import kotlinx.coroutines.launch
-import androidx.compose.ui.text.style.TextOverflow // Importación necesaria
+import androidx.compose.ui.text.style.TextOverflow
 
-
-// ==================================================================
-// 1. DATA CLASS PARA UI (ACTUALIZADA)
-// ==================================================================
 data class UIDenuncia(
     val id: String,
     val tipo: String,
@@ -47,10 +40,6 @@ data class UIDenuncia(
     val detallesAdicionales: List<Pair<String, String>> // Lista de pares (Etiqueta, Valor)
 )
 
-
-// ==================================================================
-// 2. MAPEO Domain → UI (ACTUALIZADO)
-// ==================================================================
 fun DomainDenuncia.toUiDenuncia(): UIDenuncia {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy")
     val timeFormat = SimpleDateFormat("HH:mm")
@@ -111,24 +100,30 @@ fun DomainDenuncia.toUiDenuncia(): UIDenuncia {
     return UIDenuncia(
         id = this.id,
         tipo = tipoString,
-        estatus = "En Revisión", // Asumiendo estatus fijo por ahora
+        estatus = "En Revisión",
         fecha = dateFormat.format(this.creationDate),
         hora = timeFormat.format(this.creationDate),
-        detallesAdicionales = detalles // Añadimos los detalles
+        detallesAdicionales = detalles
     )
 }
-
-
-// ==================================================================
-// 3. ITEM INDIVIDUAL (ACTUALIZADO PARA MOSTRAR TODOS LOS DETALLES)
-// ==================================================================
 @Composable
-fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
+fun DenunciaItem(denuncia: UIDenuncia) {
+    // --- Colores Dinámicos del Tema ---
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    // Colores fijos para estados específicos
+    val resolvedColor = Color(0xFF4CAF50)
+    val reviewingColor = Color(0xFFFF9800)
+    val rejectedColor = Color(0xFFF44336)
+    val iconColor = Color(0xFF0086FF)
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp, horizontal = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = surfaceColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -144,7 +139,7 @@ fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = "Tipo",
-                        tint = Color(0xFF0086FF),
+                        tint = iconColor,
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(Modifier.width(6.dp))
@@ -152,15 +147,16 @@ fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
                     Text(
                         text = denuncia.tipo,
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = onSurfaceColor
                     )
                 }
 
                 val statusColor = when (denuncia.estatus) {
-                    "Resuelta" -> Color(0xFF4CAF50)
-                    "En Revisión" -> Color(0xFFFF9800)
-                    "Rechazada" -> Color(0xFFF44336)
-                    else -> Color.Gray
+                    "Resuelta" -> resolvedColor
+                    "En Revisión" -> reviewingColor
+                    "Rechazada" -> rejectedColor
+                    else -> onSurfaceVariantColor
                 }
 
                 Text(
@@ -176,11 +172,16 @@ fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
 
 
             Spacer(Modifier.height(10.dp))
-            Divider()
+            Divider(color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.height(10.dp))
 
-            // DETALLES ADICIONALES (NUEVA SECCIÓN)
-            Text("Detalles:", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = Color.DarkGray)
+            // DETALLES ADICIONALES
+            Text(
+                "Detalles:",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = onSurfaceColor
+            )
 
             denuncia.detallesAdicionales.forEach { (label, value) ->
                 Row(
@@ -193,7 +194,7 @@ fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
                         text = "$label:",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
-                        color = Color.Gray,
+                        color = onSurfaceVariantColor,
                         modifier = Modifier.weight(0.4f)
                     )
                     Text(
@@ -202,27 +203,29 @@ fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
                         fontWeight = FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                        color = onSurfaceColor,
                         modifier = Modifier.weight(0.6f)
                     )
                 }
             }
 
             Spacer(Modifier.height(10.dp))
-            Divider()
+            Divider(color = MaterialTheme.colorScheme.outline)
             Spacer(Modifier.height(10.dp))
 
 
-            // FECHA + HORA + ID (Estructura de la corrección anterior)
+            // FECHA + HORA + ID
 
             // ID
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("ID:", fontSize = 10.sp, color = Color.Gray)
+                Text("ID:", fontSize = 10.sp, color = onSurfaceVariantColor)
                 Text(
                     text = denuncia.id,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    color = onSurfaceColor
                 )
             }
 
@@ -236,41 +239,33 @@ fun DenunciaItem(denuncia: UIDenuncia) { // Ya no necesitamos onClick
 
                 // Columna para la Fecha
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Fecha:", fontSize = 10.sp, color = Color.Gray)
-                    Text(denuncia.fecha, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text("Fecha:", fontSize = 10.sp, color = onSurfaceVariantColor)
+                    Text(denuncia.fecha, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = onSurfaceColor)
                 }
 
                 // Columna para la Hora
                 Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                    Text("Hora:", fontSize = 10.sp, color = Color.Gray)
-                    Text(denuncia.hora, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    Text("Hora:", fontSize = 10.sp, color = onSurfaceVariantColor)
+                    Text(denuncia.hora, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = onSurfaceColor)
                 }
             }
         }
     }
 }
 
-
-// ==================================================================
-// 4. PANTALLA COMPLETA - CORREGIDA
-// ==================================================================
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MisDenunciasScreen(
     onNavigateBack: () -> Unit,
     onOpenDrawer: () -> Unit,
-    onNavigateToDenunciaDetail: (String) -> Unit, // Ya no se usa, pero se mantiene el parámetro
+    onNavigateToDenunciaDetail: (String) -> Unit,
 ) {
-    // 1. Obtener la instancia de FirebaseFirestore (estable)
     val firestore = remember { FirebaseFirestore.getInstance() }
 
-    // 2. Crear la factoría con la dependencia de Firestore (estable)
     val factory = remember { MisDenunciasViewModelFactory(firestore = firestore) }
 
-    // 3. Obtener el ViewModel usando la factoría
     val viewModel: MisDenunciasViewModel = viewModel(factory = factory)
 
-    // Obtener los estados del ViewModel
     val denuncias = viewModel.denuncias.value
     val isLoading = viewModel.isLoading.value
     val feedbackMessage = viewModel.feedbackMessage.value
@@ -278,7 +273,13 @@ fun MisDenunciasScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // Mostrar mensajes
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val backgroundColor = MaterialTheme.colorScheme.background
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+
     LaunchedEffect(feedbackMessage) {
         if (feedbackMessage != null) {
             scope.launch {
@@ -293,34 +294,42 @@ fun MisDenunciasScreen(
 
         topBar = {
             TopAppBar(
-                title = { Text("Mis Denuncias", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text("Mis Denuncias", fontWeight = FontWeight.Bold, color = onSurfaceColor)
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = onSurfaceColor)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = surfaceColor,
+                    titleContentColor = onSurfaceColor
+                )
             )
         },
 
-        containerColor = Color(0xFFF5F5F5)
+        containerColor = backgroundColor
 
     ) { paddingValues ->
 
         if (isLoading) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier.fillMaxSize().padding(paddingValues).background(backgroundColor),
                 contentAlignment = Alignment.Center
-            ) { CircularProgressIndicator() }
+            ) {
+                CircularProgressIndicator(color = primaryColor)
+            }
             return@Scaffold
         }
 
         if (denuncias.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                modifier = Modifier.fillMaxSize().padding(paddingValues).background(backgroundColor),
                 contentAlignment = Alignment.Center
             ) {
                 val displayMessage = feedbackMessage ?: "Aún no has realizado ninguna denuncia."
-                Text(displayMessage, color = Color.Gray)
+                Text(displayMessage, color = onSurfaceVariantColor)
             }
             return@Scaffold
         }
@@ -330,23 +339,20 @@ fun MisDenunciasScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .background(backgroundColor)
         ) {
 
             items(denuncias) { domainDenuncia ->
 
                 val uiDenuncia = domainDenuncia.toUiDenuncia()
 
-                // Llamamos a DenunciaItem sin la función onClick
+                // Llamamos a DenunciaItem
                 DenunciaItem(denuncia = uiDenuncia)
             }
         }
     }
 }
 
-
-// ==================================================================
-// 5. PREVIEW (Sin cambios)
-// ==================================================================
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun MisDenunciasScreenPreview() {

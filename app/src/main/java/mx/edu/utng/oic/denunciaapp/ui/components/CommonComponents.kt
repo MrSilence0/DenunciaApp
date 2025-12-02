@@ -7,7 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
@@ -37,7 +36,7 @@ val WireframeGray = Color(0xFF9E9E9E)
 
 
 @Composable
-fun LabelText(text: String) {
+fun LabelText(text: String, color: Color) {
     Text(
         text = text,
         color = Color.DarkGray,

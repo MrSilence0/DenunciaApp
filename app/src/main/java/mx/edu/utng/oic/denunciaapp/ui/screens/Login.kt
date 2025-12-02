@@ -1,6 +1,7 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -20,42 +21,33 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import mx.edu.utng.oic.denunciaapp.R // Importar la clase R para recursos
+import mx.edu.utng.oic.denunciaapp.R
 import mx.edu.utng.oic.denunciaapp.data.model.User
 import mx.edu.utng.oic.denunciaapp.ui.viewmodel.LoginViewModel
-
-// Color azul similar al del wireframe (puedes moverlo a tu archivo de tema)
 val WireframeBlue = Color(0xFF64B5F6)
 
 @Composable
 fun LoginScreen(
-    // El ViewModel se inyecta o se obtiene aquí
     viewModel: LoginViewModel = viewModel(),
-    // onLoginSuccess ahora recibe el usuario
     onLoginSuccess: (User) -> Unit,
     onRegisterClick: () -> Unit,
     onForgotPasswordClick: () -> Unit
 ) {
-    // Estados para guardar lo que escribe el usuario
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    // Estado del ViewModel
     val isLoading = viewModel.isLoading
     val errorMessage = viewModel.errorMessage
     val authenticatedUser = viewModel.authenticatedUser
 
-    // Para mostrar mensajes de error (Snackbars)
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Efecto para manejar el éxito del login
     LaunchedEffect(authenticatedUser) {
         authenticatedUser?.let { user ->
             onLoginSuccess(user)
         }
     }
 
-    // Efecto para manejar errores
     LaunchedEffect(errorMessage) {
         errorMessage?.let { message ->
             snackbarHostState.showSnackbar(
@@ -63,7 +55,7 @@ fun LoginScreen(
                 actionLabel = "Cerrar",
                 duration = SnackbarDuration.Short
             )
-            viewModel.clearError() // Limpiar el error después de mostrarlo
+            viewModel.clearError()
         }
     }
 
@@ -75,17 +67,17 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                color = Color.White // Fondo blanco como el dibujo
+                color = MaterialTheme.colorScheme.background
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(24.dp)
-                        .verticalScroll(rememberScrollState()), // Permite scroll en pantallas pequeñas
+                        .verticalScroll(rememberScrollState()),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
 
-                    // --- Logo y Nombre de la App (AÑADIDO) ---
+                    // --- Logo y Nombre de la App ---
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(bottom = 32.dp, top = 16.dp)
@@ -93,30 +85,32 @@ fun LoginScreen(
                         Image(
                             painter = painterResource(id = R.drawable.denunciaappicon),
                             contentDescription = "DenunciaApp Icon",
-                            modifier = Modifier.size(80.dp) // Tamaño del icono
+                            modifier = Modifier.size(80.dp)
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "DenunciaApp",
                             fontSize = 28.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
-                    // --- Fin Logo y Nombre de la App ---
 
                     // --- Encabezado ---
                     Text(
                         text = "Iniciar sesión",
                         fontSize = 20.sp,
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp),
                         textAlign = TextAlign.Start
                     )
 
-                    HorizontalDivider(color = Color.LightGray, thickness = 1.dp)
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                        thickness = 1.dp
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -128,13 +122,17 @@ fun LoginScreen(
                         value = email,
                         onValueChange = { email = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Introduce tu correo") }, // Placeholder como en el dibujo
+                        placeholder = {
+                            Text(
+                                "Introduce tu correo",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
                         ),
-                        // Deshabilitar entrada mientras carga
                         enabled = !isLoading
                     )
 
@@ -146,14 +144,18 @@ fun LoginScreen(
                         value = password,
                         onValueChange = { password = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("********") },
+                        placeholder = {
+                            Text(
+                                "********",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
                         singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(), // Oculta el texto
+                        visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done
                         ),
-                        // Deshabilitar entrada mientras carga
                         enabled = !isLoading
                     )
 
@@ -162,7 +164,6 @@ fun LoginScreen(
                     // --- Botón Ingresa ---
                     Button(
                         onClick = {
-                            // Lógica de validación antes de llamar al ViewModel
                             if (email.isBlank() || password.isBlank()) {
                                 viewModel.errorMessage = "El correo electrónico y la contraseña son obligatorios."
                             } else {
@@ -171,8 +172,8 @@ fun LoginScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = WireframeBlue),
                         shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.width(160.dp), // Ancho fijo aproximado al dibujo
-                        enabled = !isLoading // Deshabilitar si está cargando
+                        modifier = Modifier.width(160.dp),
+                        enabled = !isLoading
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
@@ -191,20 +192,24 @@ fun LoginScreen(
                     TextButton(onClick = onForgotPasswordClick, enabled = !isLoading) {
                         Text(
                             text = "¿Olvidaste tu contraseña?",
-                            color = Color(0xFF7986CB) // Un tono azul/lila suave
+                            color = MaterialTheme.colorScheme.secondary
                         )
                     }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f), thickness = 1.dp)
+                    // Mantenemos el divisor dinámico
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                        thickness = 1.dp
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
                     // --- Sección Registro ---
                     Text(
                         text = "¿No tienes cuenta?",
-                        color = Color.Gray,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
                         fontSize = 16.sp
                     )
 
@@ -215,10 +220,10 @@ fun LoginScreen(
                         colors = ButtonDefaults.buttonColors(containerColor = WireframeBlue),
                         shape = MaterialTheme.shapes.small,
                         modifier = Modifier.width(160.dp),
-                        enabled = !isLoading // Deshabilitar si está cargando
+                        enabled = !isLoading
                     ) {
                         Text(
-                            text = "Registrate", // Tal cual aparece en el dibujo (sin tilde según imagen)
+                            text = "Registrate",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -234,7 +239,7 @@ fun LoginScreen(
 fun LabelText(text: String) {
     Text(
         text = text,
-        color = Color.DarkGray,
+        color = MaterialTheme.colorScheme.onBackground,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 4.dp),
@@ -242,12 +247,9 @@ fun LabelText(text: String) {
     )
 }
 
-// --- Preview para Android Studio ---
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun LoginScreenPreview() {
-    // Para el Preview, necesitamos proporcionar una función dummy para onLoginSuccess
-    // ya que ahora requiere un objeto User.
     LoginScreen(
         onLoginSuccess = { _ -> },
         onRegisterClick = {},

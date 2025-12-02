@@ -143,16 +143,15 @@ fun RegisterScreen(
         }
     }
 
-    // Scaffold es necesario para mostrar el Snackbar correctamente encima del contenido
     Scaffold(
         snackbarHost = {
             SnackbarHost(hostState = snackbarHostState) { data ->
                 // Personalizamos el Snackbar para que se vea oscuro
                 Snackbar(
                     snackbarData = data,
-                    containerColor = Color(0xFF546E7A), // Gris azulado oscuro
+                    containerColor = Color(0xFF546E7A),
                     contentColor = Color.White,
-                    actionColor = Color(0xFF448AFF) // Azul para "Aceptar"
+                    actionColor = Color(0xFF448AFF)
                 )
             }
         },
@@ -164,8 +163,8 @@ fun RegisterScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 24.dp) // Reducir el padding horizontal total para el encabezado
-                .verticalScroll(rememberScrollState()), // Scroll vertical
+                .padding(horizontal = 24.dp)
+                .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             // --- NUEVO: Encabezado de la App (Icono y Nombre) ---
@@ -188,11 +187,9 @@ fun RegisterScreen(
                     text = "DenunciaApp",
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF0D47A1) // Usando un azul oscuro como color principal
+                    color = Color(0xFF0D47A1)
                 )
             }
-            // --- FIN NUEVO ENCABEZADO ---
-
 
             // Campo Nombre
             SimpleOutlinedTextField(
@@ -227,7 +224,6 @@ fun RegisterScreen(
                     enabled = !isLoading
                 )
             } else {
-                // Usamos un Spacer para mantener la consistencia vertical cuando no está visible
                 Spacer(modifier = Modifier.height(56.dp))
             }
 
