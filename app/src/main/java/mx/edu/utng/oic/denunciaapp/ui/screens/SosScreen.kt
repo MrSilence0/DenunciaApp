@@ -1,5 +1,7 @@
 package mx.edu.utng.oic.denunciaapp.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext // <-- IMPORTANTE
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,24 +42,47 @@ data class EmergencyContact(
     val color: Color
 )
 
+// --- Implementación de la Lógica de Llamada (Recomendada) ---
+private fun callNumberActionDial(context: android.content.Context, number: String) {
+    try {
+        val intent = Intent(Intent.ACTION_DIAL).apply {
+            data = Uri.parse("tel:$number")
+            // Usamos FLAG_ACTIVITY_NEW_TASK si se llama desde el contexto de la aplicación.
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        // En un entorno de producción, podrías mostrar un Toast o Snackbar aquí
+        // indicando que no se pudo iniciar la aplicación de teléfono.
+        println("Error al intentar abrir el dialer: ${e.message}")
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SosScreen(
-    onOpenMenu: () -> Unit,
-    onCallNumber: (String) -> Unit
+    onOpenMenu: () -> Unit
+    // Eliminamos onCallNumber ya que se maneja internamente
 ) {
     val emergencyNumbers = listOf(
-        EmergencyContact(1, "Emergencias (General)", "911", Icons.Default.Call, Color(0xFFD32F2F)), // Rojo oscuro
-        EmergencyContact(2, "Policía Federal", "088", Icons.Default.Shield, Color(0xFF1976D2)), // Azul oscuro
-        EmergencyContact(3, "Cruz Roja", "065", Icons.Default.Favorite, Color(0xFFF44336)), // Rojo Cruz Roja
-        EmergencyContact(4, "Bomberos", "068", Icons.Default.LocalFireDepartment, Color(0xFFFF9800)), // Naranja
-        EmergencyContact(5, "CENAPRED (Desastres)", "018000041300", Icons.Default.Warning, Color(0xFF388E3C)), // Verde
-        EmergencyContact(6, "Denuncia Anónima", "089", Icons.Default.Security, Color(0xFF6A1B9A)), // Púrpura
+        EmergencyContact(1, "Emergencias (General)", "911", Icons.Default.Call, Color(0xFFD32F2F)),
+        EmergencyContact(2, "Policía Federal", "088", Icons.Default.Shield, Color(0xFF1976D2)),
+        EmergencyContact(3, "Cruz Roja", "065", Icons.Default.Favorite, Color(0xFFF44336)),
+        EmergencyContact(4, "Bomberos", "068", Icons.Default.LocalFireDepartment, Color(0xFFFF9800)),
+        EmergencyContact(5, "CENAPRED (Desastres)", "018000041300", Icons.Default.Warning, Color(0xFF388E3C)),
+        EmergencyContact(6, "Denuncia Anónima", "089", Icons.Default.Security, Color(0xFF6A1B9A)),
     )
+
+    // Obtener el contexto de Android
+    val context = LocalContext.current
+
+    // Función lambda para pasar a EmergencyItem
+    val onCall: (String) -> Unit = { number ->
+        callNumberActionDial(context, number)
+    }
 
     // --- Colores Dinámicos del Tema ---
     val primaryColor = MaterialTheme.colorScheme.primary
-    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
 
@@ -128,7 +154,7 @@ fun SosScreen(
                 items(emergencyNumbers) { contact ->
                     EmergencyItem(
                         contact = contact,
-                        onCall = onCallNumber
+                        onCall = onCall // Usamos la lambda interna
                     )
                 }
             }
@@ -144,6 +170,7 @@ fun EmergencyItem(
 ) {
     // --- Colores Dinámicos del Tema ---
     val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary // Para asegurar contraste en el FAB
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val surfaceColor = MaterialTheme.colorScheme.surface
 
@@ -153,7 +180,7 @@ fun EmergencyItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCall(contact.number) }
+            .clickable { onCall(contact.number) } // La tarjeta completa es clickable
     ) {
         Row(
             modifier = Modifier
@@ -207,7 +234,7 @@ fun EmergencyItem(
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = "Llamar a ${contact.number}",
-                    tint = Color.White
+                    tint = onPrimaryColor // Usamos onPrimaryColor para garantizar contraste
                 )
             }
         }
@@ -217,8 +244,10 @@ fun EmergencyItem(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun SosScreenPreview() {
-    SosScreen(
-        onOpenMenu = {},
-        onCallNumber = {}
-    )
+    MaterialTheme {
+        SosScreen(
+            onOpenMenu = {}
+        )
+    }
 }
+

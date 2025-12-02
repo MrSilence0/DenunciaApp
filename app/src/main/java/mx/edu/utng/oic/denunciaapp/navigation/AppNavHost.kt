@@ -241,10 +241,7 @@ fun AppNavHost(
 
         composable(AppScreen.Sos.route) {
             SosScreen(
-                onOpenMenu = { navController.navigate(AppScreen.Menu.route) },
-                onCallNumber = { phoneNumber ->
-                    println("Acción de llamada intentada al número: $phoneNumber")
-                }
+                onOpenMenu = { navController.navigate(AppScreen.Menu.route) }
             )
         }
     }
