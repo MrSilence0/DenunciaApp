@@ -42,18 +42,14 @@ data class EmergencyContact(
     val color: Color
 )
 
-// --- Implementación de la Lógica de Llamada (Recomendada) ---
 private fun callNumberActionDial(context: android.content.Context, number: String) {
     try {
         val intent = Intent(Intent.ACTION_DIAL).apply {
             data = Uri.parse("tel:$number")
-            // Usamos FLAG_ACTIVITY_NEW_TASK si se llama desde el contexto de la aplicación.
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     } catch (e: Exception) {
-        // En un entorno de producción, podrías mostrar un Toast o Snackbar aquí
-        // indicando que no se pudo iniciar la aplicación de teléfono.
         println("Error al intentar abrir el dialer: ${e.message}")
     }
 }
@@ -62,7 +58,6 @@ private fun callNumberActionDial(context: android.content.Context, number: Strin
 @Composable
 fun SosScreen(
     onOpenMenu: () -> Unit
-    // Eliminamos onCallNumber ya que se maneja internamente
 ) {
     val emergencyNumbers = listOf(
         EmergencyContact(1, "Emergencias (General)", "911", Icons.Default.Call, Color(0xFFD32F2F)),
@@ -154,7 +149,7 @@ fun SosScreen(
                 items(emergencyNumbers) { contact ->
                     EmergencyItem(
                         contact = contact,
-                        onCall = onCall // Usamos la lambda interna
+                        onCall = onCall
                     )
                 }
             }
@@ -170,7 +165,7 @@ fun EmergencyItem(
 ) {
     // --- Colores Dinámicos del Tema ---
     val primaryColor = MaterialTheme.colorScheme.primary
-    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary // Para asegurar contraste en el FAB
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val surfaceColor = MaterialTheme.colorScheme.surface
 
@@ -180,7 +175,7 @@ fun EmergencyItem(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onCall(contact.number) } // La tarjeta completa es clickable
+            .clickable { onCall(contact.number) }
     ) {
         Row(
             modifier = Modifier
@@ -223,7 +218,6 @@ fun EmergencyItem(
                 )
             }
 
-            // 3. Botón de Llamada Rápida
             IconButton(
                 onClick = { onCall(contact.number) },
                 modifier = Modifier
@@ -234,7 +228,7 @@ fun EmergencyItem(
                 Icon(
                     imageVector = Icons.Default.Call,
                     contentDescription = "Llamar a ${contact.number}",
-                    tint = onPrimaryColor // Usamos onPrimaryColor para garantizar contraste
+                    tint = onPrimaryColor
                 )
             }
         }
