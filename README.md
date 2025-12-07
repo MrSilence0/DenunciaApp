@@ -14,7 +14,7 @@ La aplicación utiliza la estructura de directorios y componentes de **Jetpack C
 
 ## Estructura del Proyecto
 
-El código está organizado siguiendo las mejores prácticas de desarrollo Android moderno:
+El código está organizado siguiendo las mejores prácticas de desarrollo Android moderno: MVVM.
 
 ## ¿Qué es MVVM (Model-View-ViewModel)?
 Es un patrón de arquitectura. Imagina una cocina de restaurante:
